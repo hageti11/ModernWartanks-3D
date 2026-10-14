@@ -99,11 +99,14 @@ add(L*.28,.12,hw*.9,mid,-L*.36,hy+.06,0);for(let i=0;i<4;i++)add(.12,.08,hw*.8,d
 add(2.6,.03,hw*.55,b3,.8,hy+.07,.55);add(2,.03,hw*.5,b2,-1.2,hy+.07,-.6);
 if(ifv){add(L*.88,1,hw*.96,body,-.1,hy+.5,0);add(L*.3,.9,hw*.96,body,L*.34,hy+.45,0,g,-.45)}
 if(d.era)for(let i=0;i<5;i++)add(.55,.2,.5,era,L*.4-.15,hy-.2,(i-2)*.62,g,-.5);
-const trk=s=>{const t=new THREE.Group();t.position.z=s*(Wd/2-.45);g.add(t);
-if(wh){for(let i=0;i<4;i++){cyl(.82,.82,.7,rub,-L*.33+i*L*.22,.82,s*.15,t,Math.PI/2);cyl(.4,.4,.74,mid,-L*.33+i*L*.22,.82,s*.15,t,Math.PI/2)}}
-else{add(L+.3,1,.85,rub,0,.62,0,t);for(let i=0;i<7;i++){cyl(.5,.5,.3,mid,-L*.38+i*L*.127,.58,s*.43,t,Math.PI/2);cyl(.25,.25,.34,dark,-L*.38+i*L*.127,.58,s*.43,t,Math.PI/2)}
-cyl(.62,.62,.34,dark,L/2,.85,s*.43,t,Math.PI/2);cyl(.5,.5,.34,dark,-L/2,.85,s*.43,t,Math.PI/2);for(let i=0;i<3;i++)cyl(.18,.18,.3,mid,-L*.25+i*L*.25,1.2,s*.43,t,Math.PI/2);add(L+.3,.08,.9,mid,0,1.16,0,t)}
-return t},trL=trk(-1),trR=trk(1);
+const tkd=[],padM=mt(0x24251f),trk=s=>{const t=new THREE.Group();t.position.z=s*(Wd/2-.45);g.add(t);const D={s,t,w:[],arms:[],roll:[],pads:null,u:0,P:1,N:0};
+const mkw=(x,y,r,wd,teeth)=>{const pv=new THREE.Group();pv.position.set(x,y,s*.4);pv.rotation.order='YZX';t.add(pv);const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,wd,14),rub);m.rotation.x=Math.PI/2;m.castShadow=true;pv.add(m);const hb=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,wd+.06,10),mid);hb.rotation.x=Math.PI/2;pv.add(hb);
+for(let k=0;k<(teeth||4);k++){const a=k/(teeth||4)*Math.PI*2,b=new THREE.Mesh(new THREE.BoxGeometry(teeth?.14:r*.5,teeth?.14:r*.14,wd+.1),dark);b.position.set(Math.cos(a)*r*(teeth?1:.62),Math.sin(a)*r*(teeth?1:.62),0);b.rotation.z=a;pv.add(b)}return pv};
+if(wh){for(let i=0;i<4;i++){const x=-L*.33+i*L*.22,pv=mkw(x,.82,.82,.7);D.w.push({o:pv,x,y:.82,r:.82,off:0,st:i<2})}}
+else{for(let i=0;i<7;i++){const x=-L*.38+i*L*.127,pv=mkw(x,.6,.5,.3),arm=new THREE.Mesh(new THREE.BoxGeometry(1,.14,.16),mid);arm.position.z=s*.4;t.add(arm);D.w.push({o:pv,x,y:.6,r:.5,off:0});D.arms.push(arm)}
+D.roll.push({o:mkw(L/2,.8,.62,.34,12),r:.62},{o:mkw(-L/2,.7,.5,.34,0),r:.5});for(let i=0;i<3;i++){const x=-L*.25+i*L*.25;D.roll.push({o:mkw(x,1.3+(x+L/2)/L*.2-.14,.17,.3,0),r:.17})}
+D.P=L+Math.PI*.6+Math.hypot(L,.2)+Math.PI*.7;D.N=Math.round(D.P/.4);D.pads=new THREE.InstancedMesh(new THREE.BoxGeometry(.36,.1,.85),padM,D.N);D.pads.frustumCulled=false;t.add(D.pads);add(L*.5,.5,.12,b2,0,1.55,s*.5,t)}
+tkd.push(D);return t},trL=trk(-1),trR=trk(1);
 for(const s of[-1,1]){if(!wh){add(L*.95,.1,.5,b2,-.1,1.5,s*(Wd/2));if(!ifv)for(let i=0;i<5;i++)add(L*.14,.7,.12,d.era?era:b2,-L*.3+i*L*.165,1.1,s*(Wd/2+.13))}else add(L*.7,.12,.5,body,0,1.7,s*(Wd/2+.05));
 add(.25,.18,.18,gl,L*.4+.4,hy-.55,s*.95);add(.9,.5,.5,b2,-L/2+.35,hy+.3,s*.8);cyl(.3,.3,.9,mid,-L/2-.1,hy+.25,s*.5,g,0,Math.PI/2)}
 cyl(.38,.38,.14,dark,L*.28,hy+.06,0);add(.5,.08,.12,gl,L*.28,hy+.16,0);add(L*.45,.05,.05,dark,0,hy+.02,hw/2-.1);
@@ -115,13 +118,13 @@ else if(rd){const t=cyl(1.65,1.9,1.1,body,-.1,.55,0,tg);t.scale.set(1.15,1,.95);
 else if(ifv){add(tw,.9,tz,body,0,.45,0,tg);add(.9,.8,2.6,mid,-.2,1.1,0,tg);for(const s of[-1,1]){add(1.5,.6,.55,dark,-.4,1.1,s*1.5,tg);add(1.4,.1,.6,era,-.4,1.45,s*1.5,tg)}}
 else{add(tw,1,tz,body,-.2,.5,0,tg);add(1.4,.6,tz*.7,b2,.2,1,0,tg)}
 if(d.era&&!rd&&!ifv&&!wh&&ct!=='m1a2')for(const s of[-1,1]){add(1.3,.5,.25,era,.2,.55,s*(tz/2+.1),tg);add(.3,.45,.45,era,1.3,.5,s*.9,tg)}
-add(1.8,.9,tz*.85,body,-tw/2-.5,.55,0,tg);add(1.6,.5,.7,b2,-tw/2-.3,.95,0,tg);cyl(.45,.45,.3,dark,-.6,1.2,.6,tg);cyl(.3,.3,.5,mid,-.6,1.5,.6,tg);add(.7,.12,.12,dark,-.3,1.6,.6,tg);add(.9,.35,.5,mid,.4,1.15,-.7,tg);add(.3,.3,.3,gl,.9,1.1,-.7,tg);cyl(.04,.04,2.8,dark,-tw/2-.7,2.2,-1,tg);
+add(1.8,.9,tz*.85,body,-tw/2-.5,.55,0,tg);add(1.6,.5,.7,b2,-tw/2-.3,.95,0,tg);cyl(.45,.45,.3,dark,-.6,1.2,.6,tg);cyl(.3,.3,.5,mid,-.6,1.5,.6,tg);add(.7,.12,.12,dark,-.3,1.6,.6,tg);add(.9,.35,.5,mid,.4,1.15,-.7,tg);add(.3,.3,.3,gl,.9,1.1,-.7,tg);const ant=new THREE.Group();ant.position.set(-tw/2-.7,.8,-1);tg.add(ant);cyl(.04,.04,2.8,dark,0,1.4,0,ant);
 for(const s of[-1,1])for(let i=0;i<3;i++)add(.22,.25,.22,dark,.2+i*.4,.85,s*(tz/2+.18),tg);
 const bp=new THREE.Group();bp.position.set(tw/2-.4,.6,0);tg.add(bp);add(.8,.95,1.5,b2,0,0,0,bp);
 const bar=new THREE.Group();bp.add(bar);const seg=(r,r2,len,x,m)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2,len,12),m);o.rotation.z=Math.PI/2;o.position.x=x;o.castShadow=true;bar.add(o)};
 seg(.2,.17,bl*.5,bl*.25,dark);seg(.17,.15,bl*.5,bl*.75,dark);seg(.25,.25,bl*.38,bl*.34,mid);seg(.22,.22,.45,bl*.66,mid);seg(.2,.18,.45,bl-.1,dark);
 const eraM={};EM.forEach(([o,pa])=>{const z=pa===tg?(o.position.x>.7?'砲塔前面':'砲塔側面'):(Math.abs(o.position.z)>Wd/2-.3?'車体側面':'車体前面上部');(eraM[z]=eraM[z]||[]).push(o)});
-return{g,tg,bp,bar,bl,body,dark,mats:[body,b2],eraM,trL,trR,L,Wd,H:.9+Hh+1.3,hullTop:.9+Hh,ml:tw/2-.4+bl,my:.9+Hh+.6}}
+return{g,tg,bp,bar,bl,body,dark,mats:[body,b2],eraM,tk:tkd,ant,trL,trR,L,Wd,H:.9+Hh+1.3,hullTop:.9+Hh,ml:tw/2-.4+bl,my:.9+Hh+.6}}
 let tanks=[],bul=[],par=[],smk=[],air=[],player,faction,over=false,run=false,last=0,endT=0,shake=0,flash=0,smkCd=0,airCd=0,camYaw=0,camPitch=.05,hudT=0,kills=0,deb=[];
 const K={f:0,b:0,l:0,r:0,sight:0};let AC;
 function sfx(f,d,v,ty){try{AC=AC||new AudioContext();const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=ty||'sawtooth';o.frequency.setValueAtTime(f,t);o.frequency.exponentialRampToValueAtTime(30,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(t+d)}catch(e){}}
@@ -287,7 +290,20 @@ if(ON){if(!ON.go&&al>0&&en>0)ON.go=1;if(!ON.go&&Math.random()<dt*.25)msg('対戦
 if(!over&&(!ON||ON.go)&&(al===0||en===0)){over=true;endT=2.2;window.win=en===0}
 if(over){endT-=dt;if(endT<=0&&$('rs').style.display==='none'){const t=$('rt');t.textContent=window.win?'VICTORY (作戦成功・敵殲滅)':'DEFEAT (作戦失敗・自部隊壊滅)';t.style.color=window.win?'#4ade80':'#f87171';$('rs').style.display='flex';if(document.exitPointerLock)document.exitPointerLock()}}}
 const mmc=$('mm').getContext('2d'),mmBg=document.createElement('canvas');mmBg.width=180;mmBg.height=100;{const g=mmBg.getContext('2d'),im=g.createImageData(180,100);for(let i=0;i<180;i++)for(let j=0;j<100;j++){const x=i*5-MX,z=j*5-MZ,h=gh(x,z),sh=cl(.5+(gh(x+4,z+4)-h)*.08,.25,.9),v=cl(h/12,0,1),k=(j*180+i)*4;im.data[k]=40+v*90*sh;im.data[k+1]=65+v*35+sh*40;im.data[k+2]=38+sh*20;im.data[k+3]=255}g.putImageData(im,0,0)}const spot=t=>t.isEnemy===player.isEnemy||tanks.some(a=>a.hp>0&&a.isEnemy!==t.isEnemy&&Math.hypot(a.x-t.x,a.z-t.z)<450&&los(a,t));
-function render(dt){tanks.forEach(t=>{t.g.position.set(t.x,t.y,t.z);t.g.rotation.set(t.roll,-t.ba,t.pitch,'YZX');t.tg.rotation.y=-(t.ta-t.ba);t.bp.rotation.z=t.tp;t.bar.position.x=-t.rc*.7;t.trL.position.y=t.mod.trkL<=0?-.15:0;t.trR.position.y=t.mod.trkR<=0?-.15:0;t.trL.rotation.z=t.mod.trkL<=0?.04:0;t.trR.rotation.z=t.mod.trkR<=0?-.04:0});
+const PAD=new THREE.Object3D();
+function animTank(t,dt){if(!t.tk||dt<=0)return;let om=t.pba===undefined?0:nrm(t.ba-t.pba)/dt;t.pba=t.ba;om=cl(om,-2.5,2.5);
+const c=Math.cos(t.ba),s=Math.sin(t.ba),Lh=t.L,tp=Math.tan(t.pitch),tr=Math.tan(t.roll),ri=.6,rs=.7,Lt=Math.hypot(Lh,.2),a1=Lh,a2=a1+Math.PI*ri,a3=a2+Lt;
+const ax=((t.sp||0)-(t.psp||0))/dt;t.psp=t.sp||0;t.av=(t.av||0)+(-(t.asw||0)*90-(t.av||0)*6-cl(ax,-8,8)*1.5)*dt;t.asw=cl((t.asw||0)+t.av*dt,-.4,.4);t.ant.rotation.z=t.asw;
+t.tk.forEach(D=>{const sd=D.s,ok=sd<0?t.mod.trkL>0:t.mod.trkR>0,v=(t.wreck||!ok)?0:(t.sp||0)+(sd<0?1:-1)*om*t.Wd/2;D.u=((D.u+v*dt)%D.P+D.P)%D.P;
+const zl=sd*(t.Wd/2-.05);D.w.forEach((q,i)=>{const xl=q.x,wx=t.x+c*xl-s*zl,wz=t.z+s*xl+c*zl,tg=cl(gh(wx,wz)-(t.y+xl*tp-zl*tr),-.28,.22);q.off+=(tg-q.off)*Math.min(1,dt*14);q.o.position.y=q.y+q.off;q.o.rotation.z-=v*dt/q.r;if(q.st)q.o.rotation.y=-cl(om*.7,-.5,.5);
+const ar=D.arms[i];if(ar){const px=xl+.55,py=.9,dx=xl-px,dy=q.y+q.off-py;ar.position.x=px+dx/2;ar.position.y=py+dy/2;ar.rotation.z=Math.atan2(dy,dx);ar.scale.x=Math.hypot(dx,dy)}});
+D.roll.forEach(q=>{q.o.rotation.z-=v*dt/q.r});
+if(D.pads){const W=D.w,offAt=x=>{if(x<=W[0].x)return W[0].off;for(let k=1;k<W.length;k++)if(x<=W[k].x){const f=(x-W[k-1].x)/(W[k].x-W[k-1].x);return W[k-1].off+(W[k].off-W[k-1].off)*f}return W[W.length-1].off};
+for(let i=0;i<D.N;i++){const u=(D.u+i*D.P/D.N)%D.P;let x,y,hd;
+if(u<a1){x=Lh/2-u;y=.1+offAt(x);hd=0}else if(u<a2){const a=(u-a1)/ri;x=-Lh/2-ri*Math.sin(a);y=.7-ri*Math.cos(a);hd=Math.atan2(Math.sin(a),-Math.cos(a))}
+else if(u<a3){const f=(u-a2)/Lt;x=-Lh/2+f*Lh;y=1.3+f*.2;hd=Math.atan2(.2,Lh)}else{const a=(u-a3)/rs;x=Lh/2+rs*Math.sin(a);y=.8+rs*Math.cos(a);hd=Math.atan2(-Math.sin(a),Math.cos(a))}
+PAD.position.set(x,y,0);PAD.rotation.set(0,0,hd);PAD.updateMatrix();D.pads.setMatrixAt(i,PAD.matrix)}D.pads.instanceMatrix.needsUpdate=true}})}
+function render(dt){tanks.forEach(t=>{t.g.position.set(t.x,t.y,t.z);t.g.rotation.set(t.roll,-t.ba,t.pitch,'YZX');t.tg.rotation.y=-(t.ta-t.ba);t.bp.rotation.z=t.tp;t.bar.position.x=-t.rc*.7;t.trL.position.y=t.mod.trkL<=0?-.15:0;t.trR.position.y=t.mod.trkR<=0?-.15:0;t.trL.rotation.z=t.mod.trkL<=0?.04:0;t.trR.rotation.z=t.mod.trkR<=0?-.04:0;animTank(t,dt)});
 const cp=camPos(),p=player,tf=K.sight?22:65;cam.fov+=(tf-cam.fov)*Math.min(1,dt*10);cam.updateProjectionMatrix();
 if(!render.p)render.p=cp.p.slice();for(let i=0;i<3;i++)render.p[i]+=(cp.p[i]-render.p[i])*Math.min(1,dt*14);
 shake=Math.max(0,shake-dt*3);const sh=shake*.25;cam.position.set(render.p[0]+(Math.random()-.5)*sh,render.p[1]+(Math.random()-.5)*sh,render.p[2]+(Math.random()-.5)*sh);
