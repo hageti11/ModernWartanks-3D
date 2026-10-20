@@ -32,7 +32,7 @@ h1{color:var(--ac);font-size:22px;margin:0 0 6px;text-shadow:0 0 14px rgba(68,25
 #msg{position:fixed;top:18%;left:0;right:0;text-align:center;font-size:16px;font-weight:700;text-shadow:0 0 6px #000;pointer-events:none;z-index:9;opacity:0;transition:opacity .4s}
 #hint{position:fixed;bottom:8px;left:0;right:0;text-align:center;font-size:11px;opacity:.7;pointer-events:none;z-index:9;display:none}
 #ctl{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);display:none;justify-content:space-between;padding:0 12px;z-index:10;pointer-events:none}
-.pad{display:grid;grid-template-columns:repeat(3,50px);gap:4px;pointer-events:auto}
+#joy{position:relative;width:138px;height:138px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.10),rgba(255,255,255,.20));border:2px solid rgba(255,255,255,.4);pointer-events:auto;touch-action:none;align-self:flex-end;margin-bottom:6px;flex:none}#jr{position:absolute;inset:34px;border-radius:50%;border:1px dashed rgba(255,255,255,.3)}#jk{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;background:rgba(255,255,255,.45);border:2px solid rgba(255,255,255,.8);box-shadow:0 2px 8px rgba(0,0,0,.4);pointer-events:none}#joy.on #jk{background:rgba(120,220,150,.65)}.ja{position:absolute;color:rgba(255,255,255,.6);font-size:11px;font-style:normal;transform:translate(-50%,-50%);pointer-events:none}.ja[style*='right']{transform:translate(50%,-50%)}.ja[style*='bottom']{transform:translate(-50%,50%)}
 .act{display:flex;gap:6px;align-items:flex-end;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end;max-width:58vw}
 .b{width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;touch-action:none;line-height:1.2}
 .b.on,.b:active{background:rgba(255,255,255,.55);color:#000}
@@ -51,7 +51,7 @@ h1{color:var(--ac);font-size:22px;margin:0 0 6px;text-shadow:0 0 14px rgba(68,25
 <div id="chl"></div><input id="chi" maxlength="100" placeholder="チャット (Enterで送信 / Escで閉じる)"><div id="msg"></div>
 <div id="hint">WASD:移動 / マウス:照準(クリックで固定) / クリック・Space:射撃 / 右クリック・Shift:ズーム照準 / Q:武装 / E:煙幕 / R:航空支援 / T:応急修理(停車8秒) / Enter:チャット(オンライン) / 10式・90式 油圧姿勢 Z:前傾 X:後傾 C:左傾 V:右傾 B:戻す</div>
 <div id="ctl">
-<div class="pad"><div></div><div class="b" data-k="f">前</div><div></div><div class="b" data-k="l">左</div><div></div><div class="b" data-k="r">右</div><div></div><div class="b" data-k="b">後</div><div></div></div>
+<div id="joy"><div id="jr"></div><div id="jk"></div><i class="ja" style="top:6px;left:50%">▲</i><i class="ja" style="bottom:6px;left:50%">▼</i><i class="ja" style="left:8px;top:50%">◀</i><i class="ja" style="right:8px;top:50%">▶</i></div>
 <div class="act"><div class="b" data-k="sight">照準</div><div class="b" data-a="sw">武装<br>切替</div><div class="b" data-a="smoke">煙幕</div><div class="b" data-a="air">航空<br>支援</div><div id="sb2" style="display:none;gap:6px"><div class="b" data-k="sD">前傾</div><div class="b" data-k="sU">後傾</div><div class="b" data-k="sL">左傾</div><div class="b" data-k="sR">右傾</div><div class="b" data-a="sr">姿勢<br>戻す</div></div><div class="b" data-a="repair">修理</div><div class="b" id="fb" data-a="fire">射撃</div></div></div>
 <div id="fs" class="ov"><h1>Modern Wartanks 3D</h1><div class="row" style="margin-bottom:6px"><input id="nick" class="sb" maxlength="12" placeholder="ニックネーム" style="width:170px;user-select:text;-webkit-user-select:text" onchange="setNick(this.value)"></div><div class="sub">3D戦車戦 — 陣営を選択してください。画面ドラッグ/マウスで砲塔と視点を操作します。</div>
 <div class="row"><button class="sb" onclick="pickF('US_JP')">日米欧連合軍<br>(JGSDF / US Army / EU)</button><button class="sb" onclick="pickF('CN')">中露連合軍<br>(PLAGF / ロシア陸軍)</button></div>
@@ -275,59 +275,464 @@ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return C
 function decalTex(kind,num){const k=kind+num;if(DEC[k])return DEC[k];const c=document.createElement('canvas');c.width=128;c.height=64;const g=c.getContext('2d');g.textBaseline='middle';
 FLAG(g,kind);
 g.fillStyle='#f3f3f3';g.font='bold 30px sans-serif';g.fillText(num,58,34);return DEC[k]=new THREE.CanvasTexture(c)}
-function buildTank(d){const g=new THREE.Group(),ct=d.contourType,wh=ct==='ztl11',ifv=ct==='bradley',rd=!['type90','type10','m1a2','bradley','ztl11'].includes(ct);
-const C=new THREE.Color(d.color),mt=c=>new THREE.MeshStandardMaterial({color:c,roughness:.88,metalness:.12}),body=mt(d.color),b2=mt(C.clone().multiplyScalar(.66)),b3=mt(C.clone().lerp(new THREE.Color(0xa89466),.3)),dark=mt(0x1a1a1d),mid=mt(0x2c2f2a),era=mt(0x3b4048),rub=mt(0x0e0e10),gl=mt(0x233a4a);
-body.map=camoTex(d.id);
-const L=ifv?6.4:wh?7:ct==='m1a2'?8:7.4,Wd=ifv?3.3:wh?3:3.6,Hh=ifv?2.1:wh?1.6:1.4,bl=ifv?3.6:wh?5:5.8,hw=Wd*.8,hy=.9+Hh;
-const EM=[],add=(w,h,dd,m,x,y,z,p,rz,ry)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,dd),m);o.position.set(x,y,z);o.rotation.z=rz||0;o.rotation.y=ry||0;o.castShadow=true;(p||g).add(o);if(m===era)EM.push([o,p||g]);return o};
-const cyl=(r,r2,h,m,x,y,z,p,rx,rz)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2,h,12),m);o.position.set(x,y,z);o.rotation.x=rx||0;o.rotation.z=rz||0;o.castShadow=true;(p||g).add(o);return o};
-add(L*.8,Hh,hw,body,-L*.1,.9+Hh/2,0);add(L*.34,.3,hw,body,L*.4-.15,hy-.32,0,g,-.5);add(.3,Hh*.6,hw*.96,b2,L*.4+.35,.9+Hh*.3,0,g,.6);
-add(L*.28,.12,hw*.9,mid,-L*.36,hy+.06,0);for(let i=0;i<4;i++)add(.12,.08,hw*.8,dark,-L*.28-i*.35,hy+.14,0);
-add(2.6,.03,hw*.55,b3,.8,hy+.07,.55);add(2,.03,hw*.5,b2,-1.2,hy+.07,-.6);
-if(ifv){add(L*.88,1,hw*.96,body,-.1,hy+.5,0);add(L*.3,.9,hw*.96,body,L*.34,hy+.45,0,g,-.45)}
-if(d.era)for(let i=0;i<5;i++)add(.55,.2,.5,era,L*.4-.15,hy-.2,(i-2)*.62,g,-.5);
-const tkd=[],padM=mt(0x24251f),trk=s=>{const t=new THREE.Group();t.position.z=s*(Wd/2-.45);g.add(t);const D={s,t,w:[],arms:[],roll:[],pads:null,u:0,P:1,N:0};
-const mkw=(x,y,r,wd,teeth)=>{const pv=new THREE.Group();pv.position.set(x,y,s*.4);pv.rotation.order='YZX';t.add(pv);const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,wd,14),rub);m.rotation.x=Math.PI/2;m.castShadow=true;pv.add(m);const hb=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,wd+.06,10),mid);hb.rotation.x=Math.PI/2;pv.add(hb);
-for(let k=0;k<(teeth||4);k++){const a=k/(teeth||4)*Math.PI*2,b=new THREE.Mesh(new THREE.BoxGeometry(teeth?.14:r*.5,teeth?.14:r*.14,wd+.1),dark);b.position.set(Math.cos(a)*r*(teeth?1:.62),Math.sin(a)*r*(teeth?1:.62),0);b.rotation.z=a;pv.add(b)}return pv};
-if(wh){for(let i=0;i<4;i++){const x=-L*.33+i*L*.22,pv=mkw(x,.82,.82,.7);D.w.push({o:pv,x,y:.82,r:.82,off:0,st:i<2})}}
-else{for(let i=0;i<7;i++){const x=-L*.38+i*L*.127,pv=mkw(x,.6,.5,.3),arm=new THREE.Mesh(new THREE.BoxGeometry(1,.14,.16),mid);arm.position.z=s*.4;t.add(arm);D.w.push({o:pv,x,y:.6,r:.5,off:0});D.arms.push(arm)}
-D.roll.push({o:mkw(L/2,.8,.62,.34,12),r:.62},{o:mkw(-L/2,.7,.5,.34,0),r:.5});for(let i=0;i<3;i++){const x=-L*.25+i*L*.25;D.roll.push({o:mkw(x,1.3+(x+L/2)/L*.2-.14,.17,.3,0),r:.17})}
-D.P=L+Math.PI*.6+Math.hypot(L,.2)+Math.PI*.7;D.N=Math.round(D.P/.4);D.pads=new THREE.InstancedMesh(new THREE.BoxGeometry(.36,.1,.85),padM,D.N);D.pads.frustumCulled=false;t.add(D.pads);add(L*.5,.5,.12,b2,0,1.55,s*.5,t)}
-tkd.push(D);return t},trL=trk(-1),trR=trk(1);
-for(const s of[-1,1]){if(!wh){add(L*.95,.1,.5,b2,-.1,1.5,s*(Wd/2));if(!ifv)for(let i=0;i<5;i++)add(L*.14,.7,.12,d.era?era:b2,-L*.3+i*L*.165,1.1,s*(Wd/2+.13))}else add(L*.7,.12,.5,body,0,1.7,s*(Wd/2+.05));
-add(.25,.18,.18,gl,L*.4+.4,hy-.55,s*.95);add(.9,.5,.5,b2,-L/2+.35,hy+.3,s*.8);cyl(.3,.3,.9,mid,-L/2-.1,hy+.25,s*.5,g,0,Math.PI/2)}
-cyl(.38,.38,.14,dark,L*.28,hy+.06,0);add(.5,.08,.12,gl,L*.28,hy+.16,0);add(L*.45,.05,.05,dark,0,hy+.02,hw/2-.1);
-const tg=new THREE.Group();tg.position.y=hy;g.add(tg);const tw=ifv?2.8:ct==='m1a2'?3.9:3.4,tz=ifv?2.4:3.1;
-if(ct==='m1a2'){add(tw,.95,tz,body,-.2,.48,0,tg);for(const s of[-1,1]){add(1.7,.95,.7,body,.9,.48,s*(tz/2-.1),tg,0,s*.45);add(1.2,.5,.2,era,.2,.55,s*(tz/2+.05),tg)}add(1.9,.5,tz*.55,b2,-.4,1,0,tg);add(.8,.5,.8,mid,-.9,1.35,-.7,tg)}
-else if(ct==='type10'){add(tw,.9,tz*.95,body,-.2,.45,0,tg);for(const s of[-1,1]){add(1.9,.9,.6,body,.8,.45,s*(tz/2-.05),tg,0,s*.55);add(1.4,.7,.3,b2,-.3,.5,s*(tz/2+.1),tg)}add(1.6,.3,tz*.6,b2,-.3,.98,0,tg)}
-else if(ct==='type90'){add(tw,1.1,tz,body,-.2,.55,0,tg);for(const s of[-1,1])add(1.5,1,.5,body,.7,.55,s*(tz/2-.05),tg,0,s*.3);add(1.4,.3,.9,b2,.3,1.2,0,tg)}
-else if(rd){const t=cyl(1.65,1.9,1.1,body,-.1,.55,0,tg);t.scale.set(1.15,1,.95);add(1.4,.7,.7,body,1.3,.55,0,tg);if(d.era)for(const s of[-1,1])for(let i=0;i<3;i++)add(.5,.7,.35,era,.8+i*.55,.6,s*1.45,tg,0,s*.1)}
-else if(ifv){add(tw,.9,tz,body,0,.45,0,tg);add(.9,.8,2.6,mid,-.2,1.1,0,tg);for(const s of[-1,1]){add(1.5,.6,.55,dark,-.4,1.1,s*1.5,tg);add(1.4,.1,.6,era,-.4,1.45,s*1.5,tg)}}
-else{add(tw,1,tz,body,-.2,.5,0,tg);add(1.4,.6,tz*.7,b2,.2,1,0,tg)}
-if(d.era&&!rd&&!ifv&&!wh&&ct!=='m1a2')for(const s of[-1,1]){add(1.3,.5,.25,era,.2,.55,s*(tz/2+.1),tg);add(.3,.45,.45,era,1.3,.5,s*.9,tg)}
-add(1.8,.9,tz*.85,body,-tw/2-.5,.55,0,tg);add(1.6,.5,.7,b2,-tw/2-.3,.95,0,tg);cyl(.45,.45,.3,dark,-.6,1.2,.6,tg);cyl(.3,.3,.5,mid,-.6,1.5,.6,tg);add(.7,.12,.12,dark,-.3,1.6,.6,tg);add(.9,.35,.5,mid,.4,1.15,-.7,tg);add(.3,.3,.3,gl,.9,1.1,-.7,tg);const kd=natOf(d.id),
-dec=(x,y,z,ry)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(.95,.6),new THREE.MeshBasicMaterial({map:decalTex(kd,''),transparent:true,depthWrite:false}));m.position.set(x,y,z);m.rotation.y=ry;tg.add(m)};dec(-1.1,.58,tz/2+.16,0);dec(-1.1,.58,-tz/2-.16,Math.PI);
-for(let i=0;i<6;i++)add(.1,.14,.42,mid,L*.4-.2,hy-.3,-.9+i*.36,g,-.5);
-const cmdr=new THREE.Group();cmdr.position.set(-.6,1.38,.6);{const bd=new THREE.Mesh(new THREE.BoxGeometry(.5,.55,.42),mt(0x4b5a3a)),hd=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),mt(0xd9b38c)),hm=new THREE.Mesh(new THREE.SphereGeometry(.23,10,6,0,6.28,0,1.6),mt(0x2f3b2a));bd.position.y=.1;hd.position.y=.55;hm.position.y=.6;cmdr.add(bd,hd,hm);tg.add(cmdr)}
-const ant=new THREE.Group();ant.position.set(-tw/2-.7,.8,-1);tg.add(ant);cyl(.04,.04,2.8,dark,0,1.4,0,ant);
-for(const s of[-1,1])for(let i=0;i<3;i++)add(.22,.25,.22,dark,.2+i*.4,.85,s*(tz/2+.18),tg);
-const bp=new THREE.Group();bp.position.set(tw/2-.4,.6,0);tg.add(bp);add(.8,.95,1.5,b2,0,0,0,bp);
-const bar=new THREE.Group();bp.add(bar);const seg=(r,r2,len,x,m)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2,len,12),m);o.rotation.z=Math.PI/2;o.position.x=x;o.castShadow=true;bar.add(o)};
-seg(.2,.17,bl*.5,bl*.25,dark);seg(.17,.15,bl*.5,bl*.75,dark);seg(.25,.25,bl*.38,bl*.34,mid);seg(.22,.22,.45,bl*.66,mid);seg(.2,.18,.45,bl-.1,dark);
-{const jp=/^(type90|type10|type74|mcv16|type10k)$/.test(d.id),us=/^(m1a2|m2bradley|m1a2sep3)$/.test(d.id),num=String(100+Array.from(d.id).reduce((a,ch)=>(a*7+ch.charCodeAt(0))%800,3)),dt=decalTex(natOf(d.id),num),zs=rd?1.62:tz/2+.04,dirt=mt(0x4a3d2a);
-for(const s of[-1,1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.4,.7),new THREE.MeshLambertMaterial({map:dt,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));m.position.set(-.3,.62,s*zs);m.rotation.y=s>0?0:Math.PI;tg.add(m)}
-add(L*.82,.3,hw*1.04,dirt,-L*.1,.95,0);
-for(const s of[-1,1]){if(!wh){cyl(.05,.05,L*.55,dark,-.3,1.58,s*(Wd/2-.08),g,0,Math.PI/2);add(.05,.5,.9,rub,L*.45,1.15,s*(Wd/2-.1))}cyl(.12,.12,.9,dark,-L/2-.1,hy-.2,s*.8,g,0,Math.PI/2);add(.35,.5,.2,mid,-tw/2-.9,.9,s*.9,tg)}
-for(let i=0;i<3;i++)add(.18,.12,.22,gl,L*.28+.45,hy+.1,(i-1)*.3);
-if(!d.era&&!wh)for(let i=0;i<5;i++)add(.3,.1,.5,rub,L*.4-.2,hy-.2,(i-2)*.55,g,-.5);
-add(1.4,.4,.9,b2,-tw/2-1,.95,0,tg);cyl(.42,.42,.08,dark,.5,1.15,.7,tg);add(.7,.08,.08,dark,.7,1.3,.7,tg);
-const dm=new THREE.Mesh(new THREE.SphereGeometry(.25,10,6,0,6.28,0,1.5),mid);dm.position.set(-.2,1.3,-.7);tg.add(dm);
-if(ct==='type10'||d.id==='type10k'){add(.5,.35,.4,mid,-.9,1.35,.55,tg);add(.7,.07,.07,dark,-.55,1.38,.55,tg)}}
-const eraM={};EM.forEach(([o,pa])=>{const z=pa===tg?(o.position.x>.7?'砲塔前面':'砲塔側面'):(Math.abs(o.position.z)>Wd/2-.3?'車体側面':'車体前面上部');(eraM[z]=eraM[z]||[]).push(o)});
-{const gm2=mt(0x1b2a36),st=mt(0x4a4a3a);for(let i=0;i<5;i++)cyl(.235,.235,.1,mid,bl*(.12+i*.17),0,0,bar,0,Math.PI/2);for(let i=-1;i<=1;i++)add(.14,.1,.2,gm2,L*.36,hy+.08,i*.38,g);for(const s of[-1,1])add(.12,.2,.2,mt(0xaa2222),-L/2-.02,hy-.1,s*(hw/2),g);
-if(!ifv){add(1.2,.5,tz*.8,mid,-tw/2-.55,.3,0,tg);for(let i=0;i<3;i++)add(.5,.28,.55,st,-tw/2-.55,.68,(i-1)*.8,tg);add(.35,.28,.5,dark,tw/2-.2,.82,.55,tg);add(.18,.18,.18,gm2,tw/2-.05,.82,.55,tg);cyl(.04,.04,.7,dark,-.55,1.5,.9,tg,0,Math.PI/2)}
-if(rd)for(const s of[-1,1])cyl(.3,.3,1.2,mt(0x3a4a2a),-L/2+.5,hy+.32,s*.75,g,Math.PI/2,0)}
-return{g,tg,bp,bar,bl,body,dark,mats:[body,b2],eraM,tk:tkd,ant,cmdr,trL,trR,L,Wd,H:.9+Hh+1.3,hullTop:.9+Hh,ml:tw/2-.4+bl,my:.9+Hh+.6}}
+const VH={},TXC={};
+// ---------- 共通ディテール部品 (車両ごとに数値を変えて使う) ----------
+// 分割式サイドスカート
+function skirtRun(K,o){const{add,bolts,M,g,both}=K;const n=o.n||6,len=(o.x1-o.x0)/n,m=o.m||M.body;
+both(s=>{for(let i=0;i<n;i++){const x=o.x0+len*(i+.5),th=(o.th0&&i<o.th0)?o.th0t:o.t;add(len-.03,o.h,th,m,x,o.y,s*(o.z-(th-o.t)/2),g);add(.035,o.h*.96,th+.03,M.b2,x-len/2+.02,o.y,s*(o.z-(th-o.t)/2),g);add(len-.03,.05,th+.06,M.dark,x,o.y+o.h/2,s*(o.z-(th-o.t)/2),g);add(len-.1,.03,th+.02,M.b2,x,o.y-o.h*.2,s*(o.z-(th-o.t)/2),g);
+bolts(g,x,o.y+o.h*.28,s*(o.z-(th-o.t)/2+th/2+.01),2,len*.5,'x',.022)}
+if(o.lip)add(o.x1-o.x0,.05,.08,M.b2,(o.x0+o.x1)/2,o.y-o.h/2+.02,s*(o.z+o.t/2),g)})}
+// 車体共通: 泥除け・牽引具・予備履帯・ヘッドライト・後部灯・フェンダー補強
+function hullKit(K,o){const{add,cyl,tor,both,M,g,tow,light,mud,links,exhaust,handle,bolts,jerry,PI}=K;
+both(s=>{if(o.fend){const f=o.fend;add(f[1]-f[0],.07,f[3],M.body,(f[0]+f[1])/2,f[2],s*f[4],g);add(f[1]-f[0],.1,.035,M.b2,(f[0]+f[1])/2,f[2]+.05,s*(f[4]+f[3]/2-.02),g);
+for(let i=0;i<5;i++)add(.05,.2,f[3]*.8,M.dark,f[0]+.4+i*(f[1]-f[0]-.8)/4,f[2]-.13,s*f[4],g)}
+if(o.tf)tor(.08,.024,M.dark,o.xf-.02,o.yn+.12,s*o.tf,g,0,PI/2,0);
+if(o.tr)tor(.08,.024,M.dark,o.xr+.02,o.yn+.35,s*o.tr,g,0,PI/2,0);
+if(o.flapF)mud(g,o.xf-.05,o.yn-.02,s*o.flapF,.8,.5);
+if(o.flapR)mud(g,o.xr-.02,o.yn-.05,s*o.flapR,.8,.5);
+if(o.lamp){light(g,o.xf-.1,o.lamp[0],s*o.lamp[1]);add(.05,.2,.24,M.dark,o.xf-.02,o.lamp[0],s*o.lamp[1],g);add(.14,.1,.12,M.red,o.xr-.03,o.lamp[2],s*o.lamp[3],g);add(.1,.04,.18,M.dark,o.xr-.02,o.lamp[2]+.1,s*o.lamp[3],g)}});
+if(o.hatch){const h=o.hatch;K.hatch(g,h[0],h[1],h[2],h[3],h[4]);for(let i=-1;i<=1;i++)add(.11,.08,.14,M.gl,h[0]+h[3]+.04,h[1]+.06,h[2]+i*.17,g,0,0,0);handle(g,h[0]-h[3]*.4,h[1]+.13,h[2],.3,'z')}
+if(o.links)links(g,o.links[0],o.links[1],o.links[2],o.links[3]||6);
+if(o.exh){const e=o.exh;both(s=>exhaust(g,e[0],e[1],s*e[2],e[3]||.1,.4,0,PI/2))}}
+// 砲塔共通: 旋回リングの隙間・天板のパネル線・アンテナ基部・吊り環
+function turKit(K,o){const{add,cyl,tor,pl,M,tg,both,handle,mast,PI}=K;
+pl(o.T.map(q=>[q[0]*.965,q[1]*.965]),.1,M.blk,0,-.07,0);
+if(o.seam){const s=o.seam;for(let i=0;i<s[2];i++)add(.025,.016,s[3]*(.9-i*.08),M.dark,s[0]-i*s[1],s[4],0,tg)}
+if(o.lift)for(const q of o.lift)tor(.055,.016,M.met,q[0],q[1],q[2],tg,PI/2,0,0);
+if(o.mast)for(const q of o.mast)mast(tg,q[0],q[1],q[2],q[3]||.5);
+if(o.rail)for(const q of o.rail)handle(tg,q[0],q[1],q[2],q[3]||.5,q[4]||'x')}
+// ---------- 西側・日本 ----------
+// M1A2 エイブラムス / SEPv3
+function abrams(K,v3){const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.66;
+sd([[-3.95,.5],[-3.95,1.22],[-3.6,1.36],[1.5,1.36],[3.4,.95],[3.95,.7],[3.95,.5]],2.6,M.body,0,0,0,g,.05);
+add(.12,.55,2.2,M.dark,-3.97,.98,0);for(let i=0;i<7;i++)add(.05,.045,2.0,M.mid,-4.0,.76+i*.075,0);add(.04,.6,.05,M.b2,-3.99,.98,.6);add(.04,.6,.05,M.b2,-3.99,.98,-.6);
+grille(g,-2.7,1.375,0,1.6,2.0,10);both(s=>{add(.9,.03,.7,M.b2,-1.3,1.385,s*.58);bolts(g,-1.3,1.405,s*.58,4,.3,'x');add(.7,.02,.04,M.dark,-1.3,1.4,s*.2)});cyl(.14,.16,.3,M.mid,-.5,1.5,.55,g,0,0,10);
+hullKit(K,{xr:-3.95,xf:3.95,yn:.62,fend:[-3.5,2.1,1.16,.64,1.48],tf:.8,tr:.8,flapF:1.3,flapR:1.3,lamp:[.92,1.2,.95,1.25],hatch:[2.95,1.07,0,.3,true],links:[-1.2,1.24,1.1,7]});
+both(s=>{add(1.7,.08,.64,M.body,3.0,1.02,s*1.48,g,-.32);add(1.7,.1,.035,M.b2,3.0,1.07,s*(1.48+.3),g,-.32);add(.6,.4,.5,M.b2,-3.3,1.56,s*1.15);crate(g,-3.3,1.9,s*1.15,.5,.34,.46,M.tan);add(.9,.03,.12,M.met,-1.6,1.2,s*1.05);add(.3,.03,.08,M.met,-1.2,1.2,s*1.2,g,0,.4);
+tow(g,.2,1.19,s*1.1,3.2);eraB(g,2.4,1.06,s*.65,.55,.1,.4,-.45);eraB(g,1.85,1.16,s*.65,.55,.1,.4,-.2)});
+K.skirt={x0:-3.5,x1:2.4,y:.7,h:.9,z:1.74,t:.15,n:6,th0:2,th0t:.3,lip:1};skirtRun(K,K.skirt);
+both(s=>{add(1.25,.55,.12,M.rub,3.05,.62,s*(Wd/2-.25),g,0,s*.08);add(.4,.55,.2,M.b2,2.55,.7,s*(Wd/2-.1),g,0,s*.2)});
+const T=sym([[2.3,.62],[1.55,1.5],[.2,1.8],[-1.2,1.8],[-1.6,1.62]]);pl(T,.8,M.body,0,0,0,tg,.08);
+pl(sym([[1.75,.8],[.1,1.55],[-1.3,1.55]]),.16,M.b2,0,.8,0,tg,.03);
+sd([[-3.1,0],[-3.1,.78],[-2.75,.92],[-1.5,.92],[-1.5,0]],3.15,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[1.2,.35,5,2.6,.97],lift:[[1.3,.96,.9],[1.3,.96,-.9],[-1.3,.96,1.1],[-1.3,.96,-1.1]],mast:[[-2.8,.92,1.35,.5],[-2.8,.92,-1.35,.5]]});
+both(s=>{eraB(tg,1.9,.45,s*1.05,.7,.62,.34,0,-s*.55);eraB(tg,.9,.45,s*1.86,.9,.6,.2);eraB(tg,-.35,.45,s*1.86,.9,.6,.2);eraB(tg,-1.5,.45,s*1.8,.9,.6,.2);
+smk(tg,1.45,.55,s*1.63,6,.1,0,1);add(1.2,.32,.4,M.b2,-2.35,.4,s*1.7,tg);if(v3)eraB(tg,1.0,.45,s*1.42,.5,.5,.25,0,-s*.2);sensor(tg,1.95,.55,s*.95,-s*.5);add(.5,.03,.3,M.b2,-1.8,.95,s*.9,tg);bolts(tg,-1.8,.975,s*.9,3,.2,'x')});
+hatch(tg,-.95,.96,-.78,.33,true);add(.38,.12,.04,M.b2,-1.15,1.2,-.98,tg);mg(tg,-1.0,1.3,-.78,.7);
+cup(tg,-.3,.96,.78,.33,.24);mg(tg,-.52,1.4,.84,.85);add(.04,.34,.4,M.b2,-.3,1.4,.62,tg);ammo(tg,-.35,1.2,1.15,0);
+sight(tg,.95,1.06,.8,.55,.28,.4,true);add(.2,.16,.4,M.dark,.65,1.2,.8,tg);sight(tg,.5,1.2,-.8,.6,.45,.42,true);add(.12,.3,.12,M.dark,.5,1.02,-.8,tg);add(.7,.05,.5,M.b2,.45,1.45,-.8,tg);
+if(v3){add(.5,.35,.45,M.b2,-1.15,1.12,.8,tg);sight(tg,.1,1.1,.3,.35,.25,.3);sensor(tg,.8,1.0,.3,0)}
+wire(tg,-3.4,.52,0,.55,.8,3.1);crate(tg,-3.35,.5,-.9,.8,.55,.5,M.tan);jerry(tg,-3.35,.55,.2,.1);jerry(tg,-3.35,.55,.5,-.1);cyl(.2,.2,1.0,M.rst,-3.4,.84,.9,tg,PI/2,0,10);
+sph(.42,.4,.64,M.b2,2.25,.5,0,tg,PI);add(.5,.78,1.15,M.body,2.25,.5,0,tg);add(.1,.6,1.0,M.b2,2.52,.5,0,tg);
+gun({bl:5.5,r:.115,sl:[.6,5.0,.165],ev:[3.7,.55,.2]});
+return{L:7.9,Wd,H:2.55,ring:[-.45,1.36],mount:[2.3,.5],bl:5.5,trk:{L:6.9,tw:.64,zc:1.38,nw:7,wr:.34,rr:.42,rf:.42,sp:'r',nr:4},dec:[.4,.4,1.8,.95],cmdr:[-.3,1.02,.78],ant:[-2.9,.9,1.4,2.6]}}
+VH.m1a2=K=>abrams(K,0);VH.m1a2v3=K=>abrams(K,1);
+// レオパルト2 (A7V / A4)
+function leo2(K,a7){const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=a7?3.7:3.54;
+sd([[-3.85,.5],[-3.85,1.15],[-3.45,1.3],[1.5,1.3],[3.55,.82],[3.85,.62],[3.85,.5]],2.5,M.body,0,0,0,g,.04);
+add(.1,.7,2.3,M.dark,-3.87,.95,0);for(let i=0;i<6;i++)add(.05,.05,2.1,M.mid,-3.9,.72+i*.09,0);grille(g,-2.6,1.335,0,1.9,2.0,12);both(s=>{add(.8,.03,.6,M.b2,-1.1,1.34,s*.62);bolts(g,-1.1,1.36,s*.62,3,.3,'x')});add(1.0,.3,.5,M.b2,-1.2,1.45,0);cyl(.2,.2,.8,M.dark,-3.5,1.5,.6,g,0,0,10);exhaust(g,-3.7,1.2,-.9,.12,.5,0,PI/2);
+hullKit(K,{xr:-3.85,xf:3.85,yn:.62,fend:[-3.55,2.0,1.12,.7,1.5],tf:.78,tr:.8,flapF:1.35,flapR:1.3,lamp:[1.0,1.2,1.1,1.2],hatch:[2.9,1.0,0,.3,true],links:[-1.0,1.16,1.3,6]});
+both(s=>{add(1.4,.08,.7,M.body,2.9,.98,s*1.5,g,-.3);
+if(a7){add(2.6,.82,.34,M.body,1.0,.76,s*(Wd/2-.17));add(2.7,.62,.13,M.body,-2.0,.7,s*(Wd/2-.07));eraB(g,1.0,.78,s*(Wd/2+.0),2.4,.6,.12);add(.3,.9,.2,M.dark,-.3,.76,s*(Wd/2-.14));add(2.6,.05,.4,M.b2,1.0,1.2,s*(Wd/2-.17));bolts(g,1.0,1.24,s*(Wd/2-.17),6,.4,'x');
+for(let i=0;i<4;i++)add(.05,.62,.15,M.b2,-3.0+i*.7,.7,s*(Wd/2-.08))}
+else{add(5.2,.5,.1,M.body,-.2,.8,s*(Wd/2-.05));for(let i=0;i<6;i++){add(.07,.5,.16,M.b2,-2.7+i*1.0,.8,s*(Wd/2-.08));bolts(g,-2.2+i*1.0,.9,s*(Wd/2+.0),2,.3,'x')}add(5.2,.05,.2,M.b2,-.2,1.06,s*(Wd/2-.05))}
+add(1.0,.5,.12,M.rub,3.05,.6,s*(Wd/2-.15),g,0,s*.1);add(.8,.06,.3,M.b2,-3.8,1.4,s*1.2);tow(g,.2,1.17,s*1.05,3.5);add(.7,.03,.1,M.met,-2.0,1.18,s*1.2);crate(g,-3.0,1.45,s*1.1,.5,.34,.5,M.tan)});
+const T=a7?sym([[2.3,.62],[1.5,1.45],[.5,1.72],[-1.0,1.72],[-1.45,1.58]]):sym([[2.3,.55],[1.75,1.55],[-1.0,1.66],[-1.5,1.66]]);
+pl(T,a7?.88:.82,M.body,0,0,0,tg,a7?.1:.04);pl(sym(a7?[[1.6,.7],[.4,1.5],[-1.1,1.5]]:[[1.8,.8],[-1.2,1.5]]),.14,M.b2,0,a7?.88:.82,0,tg,.03);
+sd([[-2.75,0],[-2.75,.82],[-2.55,.9],[-1.4,.9],[-1.4,0]],a7?2.9:2.8,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[1.0,.4,4,2.4,a7?.9:.84],lift:[[1.4,.9,.9],[1.4,.9,-.9],[-1.2,.9,1.1],[-1.2,.9,-1.1]],mast:[[-2.3,.9,1.1,.5],[-2.3,.9,-1.1,.5]]});
+both(s=>{if(a7){eraB(tg,1.8,.46,s*1.0,.75,.72,.45,0,-s*.55);eraB(tg,.9,.46,s*1.45,.9,.65,.3,0,-s*.12);eraB(tg,-.2,.46,s*1.78,1.0,.6,.14);add(.9,.5,.34,M.b2,-1.0,.4,s*1.85,tg)}
+smk(tg,1.25,.56,s*(a7?1.5:1.6),4,.12,0,1);crate(tg,-2.4,.35,s*1.15,.9,.32,.45,M.tan);sensor(tg,1.9,.5,s*.8,-s*.5)});
+hatch(tg,-.7,.95,-.72,.34,true);mg(tg,-.85,1.3,-.72,.7);cup(tg,-.5,a7?.92:.9,.72,.3,.2);mg(tg,-.7,1.32,.75,.8);add(.04,.3,.36,M.b2,-.55,1.32,.52,tg);sight(tg,.8,a7?1.02:.96,.7,.5,.28,.42,true);add(.2,.14,.4,M.dark,.5,a7?1.14:1.08,.7,tg);
+if(a7){add(.55,.3,.45,M.b2,.3,1.04,-.8,tg);mg(tg,.4,1.28,-.8,.7);sight(tg,-.8,1.1,.15,.35,.22,.3);add(.04,.3,.5,M.b2,.4,1.28,-.8,tg)}
+else{sight(tg,-.1,.98,-.4,.5,.22,.4,true);add(.4,.1,.6,M.b2,-.5,.95,.0,tg)}
+cyl(.2,.2,.9,M.rst,-2.55,.62,0,tg,PI/2,0,10);
+sph(.4,.42,.6,M.b2,2.28,.5,0,tg,PI);add(.55,.78,1.3,M.body,2.28,.5,0,tg);if(a7)add(.2,.7,1.05,M.b2,2.4,.5,0,tg);
+const bl=a7?6.4:5.5;gun({bl,r:.125,sl:a7?[.6,6.0,.175]:[.6,4.9,.165],ev:a7?[4.1,.5,.2]:[3.6,.5,.2],mb:0});
+return{L:7.7,Wd,H:2.5,ring:[-.3,1.3],mount:[2.3,.5],bl,trk:{L:6.8,tw:.64,zc:1.4,nw:7,wr:.37,rr:.43,rf:.43,sp:'r',nr:4},dec:[.2,.42,1.68,.95],cmdr:[-.5,.98,.72],ant:[-2.2,.85,1.25,2.4]}}
+VH.leo2a7=K=>leo2(K,1);VH.leo2a4=K=>leo2(K,0);
+// ルクレール
+VH.leclerc=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.71;
+sd([[-3.4,.5],[-3.4,1.1],[-3.0,1.22],[1.6,1.22],[3.0,.9],[3.4,.72],[3.4,.5]],2.5,M.body,0,0,0,g,.05);
+grille(g,-2.2,1.255,0,1.8,2.0,12);add(.1,.6,2.2,M.dark,-3.42,.9,0);for(let i=0;i<5;i++)add(.04,.05,2.0,M.mid,-3.45,.7+i*.09,0);both(s=>{add(.9,.03,.7,M.b2,-.9,1.26,s*.6)});
+hullKit(K,{xr:-3.4,xf:3.4,yn:.64,fend:[-3.2,2.1,1.1,.7,1.5],tf:.75,tr:.8,flapF:1.3,flapR:1.3,lamp:[.98,1.2,.98,1.25],hatch:[2.55,1.0,0,.3,true],links:[-.8,1.15,1.35,5]});
+both(s=>{add(5.9,.9,.13,M.body,-.2,.72,s*(Wd/2-.07));add(5.9,.05,.2,M.b2,-.2,1.17,s*(Wd/2-.1));for(let i=0;i<6;i++){add(.05,.9,.15,M.b2,-3.05+i*1.2,.72,s*(Wd/2-.07));bolts(g,-2.5+i*1.2,.95,s*(Wd/2-.0),2,.3,'x',.022)}
+add(1.1,.55,.12,M.rub,3.05,.6,s*(Wd/2-.2),g,0,s*.1);add(.3,.5,.9,M.tan,-3.4,1.5,s*1.1);
+eraB(g,1.5,.74,s*(Wd/2+.0),1.2,.6,.12);eraB(g,.2,.74,s*(Wd/2+.0),1.2,.6,.12);crate(g,-2.5,1.25,s*1.2,.7,.3,.4,M.tan)});
+const T=sym([[2.05,.55],[1.2,1.2],[-.3,1.6],[-1.6,1.55],[-2.2,1.35]]);pl(T,.72,M.body,0,0,0,tg,.09);pl(sym([[1.5,.6],[-.2,1.3],[-1.9,1.2]]),.12,M.b2,0,.72,0,tg,.03);
+sd([[-2.7,0],[-2.7,.76],[-2.4,.84],[-1.8,.84],[-1.8,0]],2.5,M.body,0,0,0,tg,.04);
+turKit(K,{T,seam:[1.2,.4,4,2.2,.8],lift:[[1.0,.78,.8],[1.0,.78,-.8],[-1.2,.78,.9],[-1.2,.78,-.9]],mast:[[-2.2,.82,.9,.5]]});
+both(s=>{eraB(tg,.7,.38,s*1.5,1.3,.55,.22);eraB(tg,-.8,.38,s*1.5,1.1,.55,.22);eraB(tg,1.55,.4,s*.95,.6,.55,.3,0,-s*.7);smk(tg,1.1,.52,s*1.28,4,.12,0,1);sensor(tg,1.7,.5,s*.65,-s*.6)});
+add(.7,.42,.5,M.b2,.9,.95,-.65,tg);sph(.12,.12,.12,M.gl,1.28,.98,-.55,tg);sph(.12,.12,.12,M.gl,1.28,.98,-.78,tg);add(.7,.04,.55,M.dark,.9,1.17,-.65,tg);
+cyl(.08,.08,.35,M.dark,-.4,.9,.65,tg);sph(.22,.2,.28,M.b2,-.4,1.07,.65,tg,PI);add(.1,.12,.2,M.gl,-.2,1.12,.65,tg);add(.3,.04,.3,M.dark,-.4,1.28,.65,tg);
+hatch(tg,-.9,.76,.65,.3,true);hatch(tg,-.8,.76,-.7,.3,false);mg(tg,-.5,1.0,.1,.6);crate(tg,-2.3,.45,.8,.6,.34,.5,M.tan);cyl(.17,.17,.9,M.rst,-2.45,.95,-.7,tg,PI/2,0,10);
+sph(.35,.36,.55,M.b2,1.95,.4,0,tg,PI);add(.4,.65,1.0,M.body,1.95,.4,0,tg);gun({bl:6.3,r:.12,sl:[.6,5.9,.165],slr:0});
+return{L:6.88,Wd,H:2.4,ring:[-.2,1.22],mount:[2.0,.4],bl:6.3,trk:{L:6.0,tw:.64,zc:1.4,nw:6,wr:.38,rr:.44,rf:.44,sp:'r',nr:4},dec:[.1,.38,1.5,.95],cmdr:[-.4,.8,.65],ant:[-1.9,.8,-1.0,2.4]}};
+// チャレンジャー3
+VH.chall3=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.5;
+sd([[-4.1,.5],[-4.1,1.2],[-3.7,1.32],[1.8,1.32],[3.7,.85],[4.1,.65],[4.1,.5]],2.5,M.body,0,0,0,g,.05);
+grille(g,-2.8,1.36,0,1.8,2.0,12);add(.1,.6,2.2,M.dark,-4.12,.95,0);for(let i=0;i<5;i++)add(.04,.05,2.0,M.mid,-4.15,.78+i*.09,0);
+hullKit(K,{xr:-4.1,xf:4.1,yn:.65,fend:[-3.7,2.4,1.12,.62,1.45],tf:.8,tr:.8,flapF:1.3,flapR:1.3,lamp:[.92,1.2,1.0,1.2],hatch:[3.0,1.0,0,.3,true],links:[-.5,1.26,1.1,6]});
+both(s=>{add(6.0,.82,.38,M.body,-.1,.7,s*(Wd/2-.2));add(6.0,.06,.5,M.b2,-.1,1.13,s*(Wd/2-.2));for(let i=0;i<8;i++){add(.05,.82,.4,M.b2,-3.0+i*.8,.7,s*(Wd/2-.2));bolts(g,-2.6+i*.8,.9,s*(Wd/2-.0),2,.3,'x',.025)}eraB(g,.4,.72,s*(Wd/2+.0),2.2,.5,.12);add(1.1,.5,.12,M.rub,3.3,.6,s*(Wd/2-.15),g,0,s*.1);add(.9,.5,.5,M.b2,-3.0,1.55,s*1.1);jerry(g,-3.0,1.95,s*1.1,0);tow(g,-.5,1.2,s*1.0,3.4);add(.9,.03,.12,M.met,.5,1.2,s*1.15)});
+const T=sym([[2.45,.9],[2.0,1.62],[.3,1.9],[-1.4,1.9],[-1.95,1.72]]);pl(T,.92,M.body,0,0,0,tg,.1);pl(sym([[1.8,1.0],[.2,1.7],[-1.5,1.7]]),.14,M.b2,0,.92,0,tg,.03);
+sd([[-3.2,0],[-3.2,.86],[-2.9,.98],[-1.7,.98],[-1.7,0]],3.2,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[1.4,.45,4,2.8,.98],lift:[[1.5,.98,1.1],[1.5,.98,-1.1],[-1.2,.98,1.3],[-1.2,.98,-1.3]],mast:[[-2.6,.95,1.4,.5],[-2.6,.95,-1.4,.5]]});
+both(s=>{eraB(tg,2.0,.46,s*1.25,.75,.72,.4,0,-s*.6);eraB(tg,.8,.46,s*1.85,1.0,.7,.22);eraB(tg,-.5,.46,s*1.85,1.0,.7,.22);smk(tg,1.2,.6,s*1.7,5,.1,0,1);crate(tg,-2.6,.4,s*1.7,1.0,.4,.55,M.tan);sensor(tg,2.1,.6,s*.55,-s*.4)});
+hatch(tg,-.9,1.0,-.8,.34,true);mg(tg,-1.0,1.32,-.8,.7);cup(tg,-.3,.98,.8,.33,.24);mg(tg,-.5,1.42,.82,.8);sight(tg,.9,1.08,.8,.5,.3,.42,true);sight(tg,.6,1.2,-.75,.55,.4,.42,true);add(.4,.3,.4,M.b2,-1.1,1.12,.75,tg);add(.04,.3,.4,M.b2,-.3,1.4,.6,tg);
+wire(tg,-3.4,.52,0,.5,.8,3.0);cyl(.2,.2,1.2,M.rst,-3.4,.88,.7,tg,PI/2,0,10);
+sph(.4,.45,.7,M.b2,2.45,.5,0,tg,PI);add(.6,.84,1.5,M.body,2.45,.5,0,tg);add(.1,.7,1.3,M.b2,2.8,.5,0,tg);gun({bl:6.3,r:.13,sl:[.6,5.5,.185],ev:[3.8,.5,.22]});
+return{L:8.2,Wd,H:2.6,ring:[-.4,1.32],mount:[2.45,.5],bl:6.3,trk:{L:7.1,tw:.66,zc:1.4,nw:6,wr:.4,rr:.45,rf:.45,sp:'r',nr:4,wx0:.6,wx1:.6},dec:[.3,.45,1.88,.95],cmdr:[-.3,1.0,.8],ant:[-2.5,.9,1.3,2.6]}};
+// アリエテ
+VH.ariete=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.6;
+sd([[-3.8,.5],[-3.8,1.18],[-3.4,1.3],[1.4,1.3],[3.3,.88],[3.8,.65],[3.8,.5]],2.5,M.body,0,0,0,g,.04);grille(g,-2.5,1.335,0,1.8,2.0,10);add(.1,.6,2.2,M.dark,-3.82,.95,0);for(let i=0;i<5;i++)add(.04,.05,2.0,M.mid,-3.85,.75+i*.09,0);
+hullKit(K,{xr:-3.8,xf:3.8,yn:.62,fend:[-3.4,2.3,1.12,.68,1.5],tf:.78,tr:.8,flapF:1.3,flapR:1.3,lamp:[.95,1.2,1.0,1.2],hatch:[2.8,1.0,0,.3,true],links:[-.4,1.16,1.2,5]});
+both(s=>{add(5.5,.62,.1,M.body,-.2,.8,s*(Wd/2-.06));add(5.5,.05,.2,M.b2,-.2,1.12,s*(Wd/2-.06));for(let i=0;i<7;i++){add(.06,.62,.14,M.b2,-2.9+i*.95,.8,s*(Wd/2-.08));bolts(g,-2.4+i*.95,.95,s*(Wd/2-.0),2,.3,'x',.022)}add(1.0,.5,.12,M.rub,3.2,.6,s*(Wd/2-.2),g,0,s*.1);tow(g,.1,1.17,s*1.1,3.4);crate(g,-3.2,1.55,s*1.1,.8,.4,.5,M.tan);jerry(g,-2.6,1.5,s*1.2,0)});
+const T=sym([[2.3,.6],[1.5,1.5],[-.2,1.66],[-1.6,1.7],[-2.0,1.72]]);pl(T,.84,M.body,0,0,0,tg,.06);pl(sym([[1.6,.8],[-1.7,1.5]]),.14,M.b2,0,.84,0,tg,.03);
+sd([[-3.0,0],[-3.0,.8],[-2.7,.92],[-1.6,.92],[-1.6,0]],3.3,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[1.2,.4,4,2.6,.9],lift:[[1.3,.9,1.0],[1.3,.9,-1.0],[-1.3,.9,1.2],[-1.3,.9,-1.2]],mast:[[-2.5,.92,1.3,.5],[-2.5,.92,-1.3,.5]]});
+both(s=>{smk(tg,1.5,.6,s*1.58,4,.12,0,1);crate(tg,-2.4,.45,s*1.8,1.0,.5,.45,M.tan);eraB(tg,1.9,.45,s*1.0,.6,.7,.3,0,-s*.5);sensor(tg,2.0,.5,s*.8,-s*.4)});
+hatch(tg,-.7,.92,-.75,.34,true);mg(tg,-.85,1.28,-.75,.7);cup(tg,-.4,.9,.75,.32,.2);mg(tg,-.55,1.28,.78,.8);sight(tg,.85,1.0,.7,.5,.28,.4,true);sight(tg,.5,.98,-.65,.5,.28,.4,true);add(.2,.2,.3,M.dark,.5,1.12,-.65,tg);
+sph(.35,.4,.6,M.b2,2.25,.48,0,tg,PI);add(.55,.76,1.25,M.body,2.25,.5,0,tg);gun({bl:5.5,r:.12,sl:[.6,4.6,.16],ev:[3.3,.5,.19]});
+return{L:7.6,Wd,H:2.4,ring:[-.35,1.3],mount:[2.3,.48],bl:5.5,trk:{L:6.8,tw:.62,zc:1.42,nw:6,wr:.38,rr:.42,rf:.42,sp:'r',nr:4},dec:[.2,.4,1.7,.95],cmdr:[-.4,.96,.75],ant:[-2.2,.85,1.3,2.4]}};
+// 90式戦車
+VH.type90=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.4;
+sd([[-3.7,.5],[-3.7,1.15],[-3.3,1.28],[1.3,1.28],[3.0,.9],[3.7,.7],[3.7,.5]],2.4,M.body,0,0,0,g,.04);grille(g,-2.4,1.31,0,1.7,1.9,10);add(.1,.6,2.1,M.dark,-3.72,.92,0);for(let i=0;i<5;i++)add(.04,.05,1.9,M.mid,-3.75,.74+i*.09,0);
+hullKit(K,{xr:-3.7,xf:3.7,yn:.65,fend:[-3.3,2.0,1.12,.6,1.42],tf:.7,tr:.75,flapF:1.2,flapR:1.2,lamp:[.95,1.15,.98,1.15],hatch:[2.7,1.0,0,.3,true],links:[-.2,1.16,1.1,5]});
+both(s=>{add(5.3,.55,.1,M.body,-.1,.82,s*(Wd/2-.06));add(5.3,.05,.18,M.b2,-.1,1.12,s*(Wd/2-.06));for(let i=0;i<6;i++){add(.07,.55,.13,M.b2,-2.6+i*1.05,.82,s*(Wd/2-.08));bolts(g,-2.1+i*1.05,.95,s*(Wd/2-.0),2,.3,'x',.022)}add(1.0,.5,.12,M.rub,3.1,.6,s*(Wd/2-.2),g,0,s*.1);tow(g,0,1.17,s*1.0,3.2);crate(g,-3.2,1.5,s*1.0,.7,.4,.5,M.tan)});
+const T=sym([[2.3,.5],[1.45,1.4],[-1.3,1.55],[-1.9,1.58]]);pl(T,.84,M.body,0,0,0,tg,.05);pl(sym([[1.2,.7],[-1.5,1.3]]),.16,M.b2,0,.84,0,tg,.03);add(1.2,.3,1.9,M.b2,-1.8,.96,0,tg);
+sd([[-3.0,0],[-3.0,.82],[-2.7,.92],[-1.5,.92],[-1.5,0]],3.0,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[1.0,.4,4,2.4,.9],lift:[[1.2,.88,.8],[1.2,.88,-.8],[-1.2,.88,1.0],[-1.2,.88,-1.0]],mast:[[-2.2,.96,1.0,.5]]});
+both(s=>{smk(tg,1.55,.55,s*1.2,3,.14,0,1);add(.9,.4,.3,M.b2,.2,.45,s*1.58,tg);crate(tg,-2.3,.4,s*1.4,.7,.4,.45,M.tan);eraB(tg,1.7,.5,s*.8,.5,.5,.3,0,-s*.5);sensor(tg,1.8,.5,s*.9,-s*.4)});
+cup(tg,-.5,.92,.7,.3,.2);mg(tg,-.7,1.3,.72,.8);add(.04,.3,.36,M.b2,-.55,1.32,.52,tg);hatch(tg,-1.0,.94,-.7,.33,true);sight(tg,.8,.97,-.7,.55,.3,.45,true);add(.2,.2,.3,M.dark,.5,1.1,-.7,tg);sight(tg,.7,.98,.6,.4,.22,.35);
+sph(.35,.4,.58,M.b2,2.2,.48,0,tg,PI);add(.55,.76,1.2,M.body,2.2,.48,0,tg);gun({bl:5.6,r:.12,sl:[.6,4.5,.165],ev:[3.9,.5,.19]});
+return{L:7.5,Wd,H:2.3,ring:[-.3,1.28],mount:[2.25,.48],bl:5.6,trk:{L:6.5,tw:.6,zc:1.4,nw:6,wr:.37,rr:.42,rf:.42,sp:'r',nr:4},dec:[.1,.4,1.56,.95],cmdr:[-.5,.97,.7],ant:[-2.2,.9,1.2,2.4]}};
+// 10式戦車 / 10式改
+VH.type10=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.24;
+sd([[-3.5,.5],[-3.5,1.1],[-3.1,1.25],[1.2,1.25],[3.1,.9],[3.5,.7],[3.5,.5]],2.3,M.body,0,0,0,g,.04);grille(g,-2.3,1.28,0,1.6,1.8,9);add(.1,.55,2.0,M.dark,-3.52,.9,0);for(let i=0;i<4;i++)add(.04,.05,1.8,M.mid,-3.55,.75+i*.09,0);
+hullKit(K,{xr:-3.5,xf:3.5,yn:.65,fend:[-3.0,1.9,1.1,.55,1.35],tf:.65,tr:.7,flapF:1.15,flapR:1.15,lamp:[.95,1.05,.95,1.05],hatch:[2.6,1.0,0,.28,true],links:[-.1,1.14,1.0,5]});
+both(s=>{add(3.2,.7,.32,M.body,.8,.78,s*(Wd/2-.15));add(3.2,.05,.4,M.b2,.8,1.14,s*(Wd/2-.15));add(2.2,.6,.1,M.body,-2.1,.75,s*(Wd/2-.06));bolts(g,.8,.95,s*(Wd/2+.0),5,.55,'x',.025);add(.9,.5,.12,M.rub,3.05,.6,s*(Wd/2-.2),g,0,s*.1);tow(g,0,1.15,s*.95,3.0);eraB(g,.8,.78,s*(Wd/2+.0),1.6,.5,.1);crate(g,-2.9,1.45,s*1.0,.6,.35,.45,M.tan)});
+const T=sym([[2.2,.5],[1.3,1.35],[.2,1.55],[-1.3,1.5],[-1.8,1.35]]);pl(T,.86,M.body,0,0,0,tg,.13);pl(sym([[1.4,.6],[.1,1.3],[-1.4,1.25]]),.12,M.b2,0,.86,0,tg,.04);
+sd([[-2.8,0],[-2.8,.7],[-2.2,.9],[-1.4,.9],[-1.4,0]],2.7,M.body,0,0,0,tg,.06);
+turKit(K,{T,seam:[.8,.4,4,2.2,.97],lift:[[1.1,.9,.8],[1.1,.9,-.8],[-1.1,.9,.9],[-1.1,.9,-.9]],mast:[[-2.0,.9,.9,.5]]});
+both(s=>{add(.9,.8,.28,M.b2,1.3,.45,s*1.4,tg,0,-s*.7);smk(tg,1.4,.55,s*1.22,3,.14,0,1);eraB(tg,1.7,.5,s*.8,.6,.7,.3,0,-s*.55);eraB(tg,.4,.5,s*1.55,1.0,.6,.2);sensor(tg,1.75,.6,s*.95,-s*.5);crate(tg,-2.3,.4,s*1.0,.7,.4,.45,M.tan)});
+add(.65,.4,.55,M.b2,-.55,1.06,.7,tg);mg(tg,-.45,1.38,.72,.75);add(.5,.15,.45,M.gl,-.3,1.06,.7,tg);add(.04,.3,.4,M.b2,-.3,1.36,.62,tg);hatch(tg,-1.0,.92,-.65,.32,true);sight(tg,.85,.98,-.6,.5,.28,.42,true);add(.2,.2,.3,M.dark,.5,1.1,-.6,tg);sight(tg,.3,.98,.45,.4,.22,.35);
+sph(.35,.4,.55,M.b2,2.15,.46,0,tg,PI);add(.55,.7,1.1,M.body,2.15,.46,0,tg);gun({bl:5.6,r:.12,sl:[.6,4.8,.16],ev:[3.7,.5,.19]});
+return{L:7.3,Wd,H:2.3,ring:[-.2,1.25],mount:[2.2,.46],bl:5.6,trk:{L:6.2,tw:.58,zc:1.36,nw:5,wr:.42,rr:.42,rf:.42,sp:'r',nr:3,wx0:.7,wx1:.7},dec:[.0,.4,1.38,.95],cmdr:[-.6,1.0,.7],ant:[-2.0,.85,-1.1,2.4]}};
+// 16式機動戦闘車
+VH.type16=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=2.98;
+sd([[-3.9,.55],[-3.9,1.5],[-3.5,1.65],[.3,1.65],[2.3,1.45],[3.0,1.1],[3.9,.9],[3.9,.55]],2.5,M.body,0,0,0,g,.05);
+add(.1,.8,1.7,M.dark,-3.92,1.0,0);for(let i=0;i<5;i++)add(.04,.05,1.5,M.mid,-3.95,.8+i*.1,0);grille(g,-2.8,1.69,0,1.6,1.8,9);add(.04,.35,1.3,M.gl,2.9,1.25,0);add(.5,.3,.6,M.b2,2.2,1.65,.7);hatch(g,2.1,1.62,-.5,.28,true);
+for(let i=-1;i<=1;i++)add(.12,.1,.16,M.gl,2.4,1.5,i*.25);bolts(g,3.4,.95,0,6,.35,'z');
+both(s=>{for(const x of[2.4,1.1,-1.2,-2.7]){add(1.2,.1,.8,M.body,x,.86,s*1.3);add(1.2,.1,.04,M.b2,x,.92,s*1.7)}add(1.0,.1,.6,M.body,-.1,.8,s*1.4);light(g,3.9,.95,s*1.0);crate(g,-.2,1.2,s*1.45,.6,.4,.3,M.tan);mud(g,-3.95,.7,s*1.1,.8,.5);exhaust(g,-3.9,1.1,s*.9,.1,.3,0,PI/2);tow(g,.3,1.7,s*.9,2.0);tor(.08,.025,M.dark,3.9,.7,s*.7,g,0,PI/2,0)});
+const T=sym([[1.8,.55],[1.15,1.25],[-1.2,1.35],[-1.75,1.2]]);pl(T,.76,M.body,0,0,0,tg,.07);pl(sym([[1.2,.7],[-1.3,1.2]]),.12,M.b2,0,.76,0,tg,.03);
+sd([[-2.4,0],[-2.4,.7],[-2.1,.84],[-1.2,.84],[-1.2,0]],2.7,M.body,0,0,0,tg,.04);
+turKit(K,{T,seam:[.6,.4,4,2.2,.85],lift:[[1.0,.8,.8],[1.0,.8,-.8]],mast:[[-1.8,.84,1.1,.5]]});
+both(s=>{smk(tg,1.3,.5,s*1.1,3,.14,0,1);eraB(tg,1.3,.4,s*.78,.5,.6,.3,0,-s*.5);sensor(tg,1.6,.5,s*.7,-s*.5);crate(tg,-2.0,.35,s*1.0,.7,.3,.4,M.tan)});
+cup(tg,-.5,.84,.6,.28,.18);mg(tg,-.7,1.2,.62,.7);hatch(tg,-.9,.8,-.6,.3,true);sight(tg,.5,.9,-.55,.5,.26,.38,true);add(.2,.2,.3,M.dark,.2,1.04,-.55,tg);
+sph(.3,.36,.5,M.b2,1.75,.42,0,tg,PI);add(.5,.64,1.0,M.body,1.75,.42,0,tg);gun({bl:5.4,r:.1,sl:[.5,4.6,.145],mb:'multi'});
+return{L:8.45,Wd,H:2.8,ring:[.35,1.65],mount:[1.8,.42],bl:5.4,wh:{xs:[2.55,1.1,-1.2,-2.7],r:.6,w:.48,zc:1.32},dec:[-.1,.38,1.1,.8],cmdr:[-.5,.86,.6],ant:[-1.5,.8,-.9,2.2]}};
+// ---------- 装輪・IFV・中国 ----------
+// チェンタウロ II
+VH.centauro=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.05;
+sd([[-3.9,.55],[-3.9,1.5],[-3.5,1.62],[.4,1.62],[2.2,1.4],[3.0,1.0],[3.9,.85],[3.9,.55]],2.4,M.body,0,0,0,g,.05);
+add(.1,.8,1.7,M.dark,-3.92,1.0,0);for(let i=0;i<5;i++)add(.04,.05,1.5,M.mid,-3.95,.8+i*.1,0);grille(g,-2.7,1.66,0,1.7,1.8,10);add(.04,.3,1.4,M.gl,3.0,1.2,0);hatch(g,2.0,1.6,.4,.28,true);
+for(let i=-1;i<=1;i++)add(.12,.1,.16,M.gl,2.5,1.5,i*.28);hatch(g,2.0,1.6,-.5,.28,false);bolts(g,3.5,.95,0,6,.35,'z');
+both(s=>{for(const x of[2.4,.95,-1.3,-2.8]){add(1.2,.12,.8,M.body,x,1.27,s*1.3);add(1.2,.1,.04,M.b2,x,1.33,s*1.7)}add(.8,.5,.4,M.tan,-.3,1.35,s*1.45);light(g,3.9,1.0,s*.95);add(.12,.5,.6,M.b2,3.7,1.35,s*1.2);mud(g,-3.95,.75,s*1.1,.8,.5);exhaust(g,-3.9,1.2,s*.95,.1,.3,0,PI/2);tow(g,.3,1.68,s*.9,2.2);tor(.08,.025,M.dark,3.9,.7,s*.7,g,0,PI/2,0);jerry(g,-.4,1.45,s*1.35,0);
+add(1.4,.5,.15,M.body,.6,.95,s*1.15,g);add(1.4,.04,.2,M.b2,.6,1.2,s*1.15,g)});
+const T=sym([[1.9,.6],[1.3,1.3],[-1.2,1.5],[-1.95,1.35]]);pl(T,.8,M.body,0,0,0,tg,.07);pl(sym([[1.2,.8],[-1.4,1.3]]),.14,M.b2,0,.8,0,tg,.03);
+sd([[-2.6,0],[-2.6,.76],[-2.3,.9],[-1.3,.9],[-1.3,0]],2.7,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[.8,.4,4,2.4,.95],lift:[[1.0,.84,.8],[1.0,.84,-.8],[-1.2,.84,1.0],[-1.2,.84,-1.0]],mast:[[-1.8,.9,1.1,.5]]});
+both(s=>{smk(tg,1.3,.55,s*1.3,4,.14,0,1);crate(tg,-2.0,.45,s*1.5,.7,.5,.5,M.tan);eraB(tg,1.4,.42,s*.85,.5,.6,.3,0,-s*.5);sensor(tg,1.7,.55,s*.75,-s*.5)});
+cup(tg,-.6,.88,.65,.3,.2);mg(tg,-.8,1.25,.68,.7);add(.04,.3,.36,M.b2,-.65,1.27,.46,tg);hatch(tg,-1.0,.84,-.65,.3,true);sight(tg,.7,.95,-.6,.5,.3,.4,true);add(.2,.2,.3,M.dark,.3,1.1,-.6,tg);
+sph(.4,.4,.55,M.b2,1.9,.45,0,tg,PI);add(.55,.74,1.3,M.body,1.9,.45,0,tg);gun({bl:5.4,r:.13,sl:[.5,4.2,.175],mb:'multi'});
+return{L:7.8,Wd,H:2.65,ring:[-.2,1.62],mount:[1.95,.46],bl:5.4,wh:{xs:[2.6,1.1,-1.2,-2.7],r:.62,w:.5,zc:1.38},dec:[-.1,.4,1.3,.85],cmdr:[-.6,.9,.65],ant:[-1.6,.8,-1.0,2.2]}};
+// 11式装輪突撃車
+VH.ztl11=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.0;
+sd([[-3.8,.55],[-3.8,1.4],[-3.4,1.52],[0,1.52],[1.6,1.38],[3.0,.95],[3.8,.8],[3.8,.55]],2.5,M.body,0,0,0,g,.05);
+add(.1,.7,1.7,M.dark,-3.82,.95,0);for(let i=0;i<5;i++)add(.04,.05,1.5,M.mid,-3.85,.75+i*.1,0);grille(g,-2.7,1.56,0,1.6,1.8,9);add(.04,.3,1.0,M.gl,2.8,1.1,0);hatch(g,1.9,1.5,.5,.26,true);for(let i=-1;i<=1;i++)add(.12,.1,.16,M.gl,2.3,1.4,i*.28);bolts(g,3.4,.9,0,5,.4,'z');
+both(s=>{for(const x of[2.5,1.0,-1.2,-2.7]){add(1.2,.12,.78,M.body,x,1.27,s*1.3);add(1.2,.1,.04,M.b2,x,1.33,s*1.7)}light(g,3.8,.95,s*1.0);eraB(g,2.9,1.15,s*1.0,.9,.5,.12,0,s*.4);eraB(g,1.8,1.3,s*1.2,.8,.4,.12);crate(g,-1.0,1.4,s*1.42,.7,.4,.4,M.tan);mud(g,-3.85,.75,s*1.1,.8,.5);exhaust(g,-3.8,1.2,s*.9,.1,.3,0,PI/2);tow(g,.3,1.55,s*.9,2.0);tor(.08,.025,M.dark,3.8,.7,s*.7,g,0,PI/2,0)});
+const T=sym([[1.7,.5],[1.0,1.2],[-1.2,1.25],[-1.7,1.0]]);pl(T,.74,M.body,0,0,0,tg,.07);pl(sym([[1.0,.7],[-1.2,1.1]]),.12,M.b2,0,.74,0,tg,.03);
+turKit(K,{T,seam:[.6,.4,3,2.0,.8],lift:[[.8,.78,.7],[.8,.78,-.7]],mast:[[-1.5,.8,.9,.5]]});
+both(s=>{eraB(tg,1.4,.4,s*.65,.5,.6,.3,0,-s*.5);eraB(tg,.2,.4,s*1.3,.8,.5,.14);smk(tg,1.1,.5,s*.98,3,.14,0,1);crate(tg,-1.9,.4,s*1.0,.8,.4,.4,M.tan);sensor(tg,1.4,.5,s*.8,-s*.4)});
+sd([[-2.3,0],[-2.3,.68],[-2.0,.8],[-1.2,.8],[-1.2,0]],2.3,M.body,0,0,0,tg,.04);
+cup(tg,-.5,.8,.55,.27,.18);mg(tg,-.7,1.16,.58,.7);hatch(tg,-.9,.76,-.55,.28,true);sight(tg,.5,.88,-.5,.45,.25,.36,true);add(.2,.2,.3,M.dark,.1,1.0,-.5,tg);
+sph(.35,.36,.5,M.b2,1.7,.4,0,tg,PI);add(.5,.64,1.0,M.body,1.7,.4,0,tg);gun({bl:5.0,r:.1,sl:[.5,4.2,.15],mb:'slot'});
+return{L:7.6,Wd,H:2.7,ring:[.5,1.52],mount:[1.7,.4],bl:5.0,wh:{xs:[2.55,1.1,-1.2,-2.7],r:.62,w:.5,zc:1.38},dec:[-.1,.38,1.18,.8],cmdr:[-.5,.84,.55],ant:[-1.5,.8,-.9,2.2]}};
+// プーマ
+VH.puma=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.7;
+sd([[-3.65,.5],[-3.65,1.55],[-3.2,1.7],[.5,1.7],[2.6,1.2],[3.65,.9],[3.65,.5]],2.5,M.body,0,0,0,g,.05);
+add(.1,.9,2.3,M.b2,-3.67,1.0,0);add(.04,.6,2.0,M.dark,-3.72,1.0,0);bolts(g,-3.75,1.0,0,6,.35,'z');grille(g,-2.0,1.74,0,1.5,1.8,9);hatch(g,-2.7,1.72,.8,.3,true);hatch(g,-2.7,1.72,-.8,.3,false);hatch(g,2.2,1.4,.4,.28,true);for(let i=-1;i<=1;i++)add(.12,.1,.16,M.gl,2.55,1.34,.4+i*.25);
+hullKit(K,{xr:-3.65,xf:3.65,yn:.64,tf:.8,tr:.9,flapF:1.45,flapR:1.4,lamp:[1.0,1.3,1.1,1.3],links:0});
+both(s=>{add(5.3,.95,.34,M.body,-.2,1.05,s*(Wd/2-.14),g,-s*.2);add(5.3,.06,.5,M.b2,-.2,1.55,s*(Wd/2-.3),g);eraB(g,-.4,1.05,s*(Wd/2-.0),2.4,.7,.1,-s*.2);eraB(g,1.9,.95,s*(Wd/2-.1),1.4,.6,.1,-s*.2);bolts(g,-.4,1.2,s*(Wd/2-.05),6,.4,'x');add(.9,.5,.12,M.rub,3.3,.6,s*(Wd/2-.2),g,0,s*.1);add(5.2,.5,.12,M.b2,-.2,.55,s*(Wd/2-.05));exhaust(g,-3.7,1.0,s*1.0,.1,.3,0,PI/2);tow(g,.5,1.72,s*.95,2.2);jerry(g,-1.2,1.85,s*1.2,0)});
+const T=sym([[1.15,.45],[.8,.95],[-.5,1.0],[-.9,.75]]);pl(T,.55,M.body,0,0,0,tg,.06);pl(sym([[.7,.6],[-.6,.85]]),.1,M.b2,0,.55,0,tg,.03);
+add(.9,.38,.5,M.mid,.1,.45,-1.15,tg);add(.7,.2,.3,M.dark,.55,.5,-1.15,tg);for(const k of[-1,1])cyl(.045,.045,.5,M.dark,.65,.45,-1.15+k*.07,tg,0,PI/2,8);smk(tg,.9,.5,.98,3,.12,0,1);smk(tg,.9,.5,-.98,3,.12,0,1);
+turKit(K,{T,seam:[.5,.3,3,1.4,.6],lift:[[.5,.58,.5],[.5,.58,-.5]],mast:[[-.8,.6,.7,.5]]});
+sight(tg,-.1,.78,.5,.4,.25,.35,true);add(.15,.2,.3,M.dark,-.1,.62,.5,tg);sight(tg,.4,.76,-.3,.35,.25,.3,true);mg(tg,-.4,.74,-.3,.5);cyl(.06,.06,.4,M.dark,-.9,.8,.6,tg,0,0,8);sensor(tg,.9,.55,.6,-.3);
+sph(.28,.32,.45,M.b2,1.05,.35,0,tg,PI);add(.4,.5,.9,M.body,1.05,.35,0,tg);gun({bl:3.2,r:.045,sl:[.6,2.6,.075],slr:0,mb:0,coaxZ:.2});
+return{L:7.3,Wd,H:2.55,ring:[.35,1.7],mount:[1.1,.35],bl:3.2,trk:{L:6.0,tw:.6,zc:1.45,nw:6,wr:.36,rr:.4,rf:.4,sp:'r',nr:3},dec:[-.1,.3,.98,.6],cmdr:null,ant:[-.8,.8,-.7,2.2],eraX:.3}};
+// M2A3 ブラッドレイ
+VH.m2bradley=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.6;
+sd([[-3.3,.55],[-3.3,1.55],[-2.9,1.72],[.6,1.72],[1.6,1.58],[3.0,1.0],[3.3,.8],[3.3,.55]],2.6,M.body,0,0,0,g,.05);
+add(.1,.9,2.2,M.b2,-3.32,1.05,0);add(.04,.5,1.6,M.dark,-3.37,1.05,0);bolts(g,-3.4,1.05,0,6,.3,'z');hatch(g,-1.9,1.76,-.7,.28,true);hatch(g,-1.9,1.76,.7,.28,false);grille(g,2.1,1.62,.7,1.0,.7,6);hatch(g,2.2,1.5,-.4,.28,true);for(let i=-1;i<=1;i++)add(.12,.1,.16,M.gl,2.55,1.44,-.4+i*.25);
+hullKit(K,{xr:-3.3,xf:3.3,yn:.7,tf:.85,tr:.9,flapF:1.45,flapR:1.4,lamp:[1.0,1.3,1.15,1.3]});
+both(s=>{add(5.8,.9,.2,M.body,-.2,1.08,s*(Wd/2-.1));for(let i=0;i<6;i++){eraB(g,-2.4+i*.95,1.1,s*(Wd/2+.02),.8,.7,.1);}eraB(g,2.0,1.05,s*(Wd/2-.1),.8,.6,.1);add(5.8,.07,.4,M.b2,-.2,1.58,s*(Wd/2-.1));add(1.0,.5,.12,M.rub,3.0,.6,s*(Wd/2-.2),g,0,s*.1);add(5.2,.45,.12,M.b2,-.2,.6,s*(Wd/2-.05));exhaust(g,-3.3,1.0,s*1.0,.1,.3,0,PI/2);tow(g,.4,1.78,s*1.0,2.4);jerry(g,-2.5,1.9,s*1.4,0);crate(g,-1.0,1.9,s*1.4,.7,.3,.4,M.tan)});
+const T=sym([[1.0,.9],[-.7,.95],[-1.1,.9]]);pl(T,.78,M.body,0,0,0,tg,.06);
+turKit(K,{T,seam:[.4,.3,3,1.8,.83],lift:[[.5,.82,.6],[.5,.82,-.6]],mast:[[-.9,.82,.7,.5]]});
+both(s=>{eraB(tg,.2,.42,s*(1.0),1.2,.6,.12);smk(tg,.9,.5,s*1.0,4,.1,0,1)});
+add(1.3,.5,.5,M.b2,.15,.55,-1.3,tg);add(1.35,.05,.55,M.dark,.15,.82,-1.3,tg);for(const k of[-1,1])cyl(.08,.08,.5,M.dark,.9,.55,-1.3+k*.12,tg,0,PI/2,8);add(.1,.3,.5,M.blk,.88,.55,-1.3,tg);
+cup(tg,-.5,.8,.65,.3,.2);mg(tg,-.7,1.15,.68,.7);add(.04,.3,.36,M.b2,-.55,1.17,.47,tg);hatch(tg,-.6,.8,-.5,.28,true);sight(tg,.5,.9,.4,.4,.25,.35,true);sight(tg,.45,.88,-.3,.35,.22,.3);sensor(tg,.9,.7,.8,-.2);
+sph(.3,.36,.4,M.b2,1.0,.42,0,tg,PI);add(.4,.62,.8,M.body,1.0,.42,0,tg);gun({bl:2.6,r:.05,sl:[.5,1.8,.08],slr:0,mb:0,coaxZ:.18});
+return{L:6.55,Wd,H:2.95,ring:[-.1,1.72],mount:[1.0,.42,.1],bl:2.6,trk:{L:5.3,tw:.55,zc:1.45,nw:6,wr:.34,rr:.4,rf:.4,sp:'f',nr:3},dec:[-.2,.4,1.0,.6],cmdr:[-.5,.85,.65],ant:[-1.0,.8,-.7,2.2],eraX:.2}};
+// 99式A型 / A2型
+function t99(K,a2){const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.4;
+sd([[-3.8,.5],[-3.8,1.15],[-3.4,1.28],[1.0,1.28],[3.0,.95],[3.8,.7],[3.8,.5]],2.4,M.body,0,0,0,g,.04);grille(g,-2.5,1.31,0,1.7,1.9,10);add(.1,.6,2.1,M.dark,-3.82,.92,0);for(let i=0;i<5;i++)add(.04,.05,1.9,M.mid,-3.85,.74+i*.09,0);
+hullKit(K,{xr:-3.8,xf:3.8,yn:.65,fend:[-3.4,2.4,1.1,.6,1.42],tf:.7,tr:.8,flapF:1.2,flapR:1.2,lamp:[.95,1.15,.98,1.15],hatch:[2.8,1.05,0,.3,true],links:[-.4,1.17,1.1,5]});
+both(s=>{add(2.8,.7,.3,M.body,1.1,.8,s*(Wd/2-.15));add(2.8,.05,.4,M.b2,1.1,1.16,s*(Wd/2-.15));eraB(g,1.1,.82,s*(Wd/2-.0),2.6,.6,.12);add(2.6,.55,.1,M.body,-2.2,.78,s*(Wd/2-.06));bolts(g,-2.2,.95,s*(Wd/2+.0),5,.5,'x',.022);add(1.0,.5,.12,M.rub,3.3,.6,s*(Wd/2-.2),g,0,s*.1);for(let i=0;i<3;i++)eraB(g,3.0-i*.5,.9,s*.6,.4,.12,.5,0,0,-.3);drum(g,-3.6,1.5,s*.9,.28,.9);tow(g,.2,1.18,s*1.0,3.0);crate(g,-1.2,1.4,s*1.0,.7,.3,.4,M.tan)});
+const T=sym([[2.5,.5],[1.4,1.5],[.3,1.75],[-1.4,1.7],[-1.9,1.55]]);pl(T,.88,M.body,0,0,0,tg,.1);pl(sym([[1.5,.7],[.2,1.5],[-1.6,1.45]]),.14,M.b2,0,.88,0,tg,.03);
+sd([[-2.9,0],[-2.9,.8],[-2.6,.94],[-1.5,.94],[-1.5,0]],2.9,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[.9,.4,4,2.6,.98],lift:[[1.1,.92,.9],[1.1,.92,-.9],[-1.2,.92,1.1],[-1.2,.92,-1.1]],mast:[[-2.2,.94,1.2,.5]]});
+for(let i=0;i<3;i++)both(s=>{eraB(tg,2.0-i*.2,.45+.0,s*(.45+i*.42),.45,.7,.3,0,-s*.25);});
+both(s=>{eraB(tg,.8,.46,s*1.72,.9,.6,.2);eraB(tg,-.3,.46,s*1.72,.9,.6,.2);smk(tg,1.2,.6,s*1.5,3,.14,0,1);crate(tg,-2.2,.4,s*1.4,.7,.4,.5,M.b2);add(.18,.28,.3,M.red,1.5,.95,s*.9,tg);sensor(tg,1.7,.95,s*.7,-s*.3)});
+cup(tg,-.4,.95,.75,.3,.22);mg(tg,-.6,1.32,.78,.8);add(.04,.3,.36,M.b2,-.45,1.34,.55,tg);hatch(tg,-1.0,.96,-.7,.32,true);sight(tg,.8,1.04,-.7,.6,.32,.45,true);add(.3,.35,.3,M.dark,.8,1.3,.7,tg);sph(.2,.17,.2,M.b2,.8,1.04,.7,tg,PI/2);
+if(a2){add(.5,.3,.5,M.b2,-.9,1.1,.15,tg);add(.3,.2,.3,M.gl,-.9,1.3,.15,tg);mast(tg,-.9,1.2,.15,.5)}
+wire(tg,-2.9,.7,0,.5,.8,2.6);sph(.4,.42,.6,M.b2,2.3,.5,0,tg,PI);add(.55,.84,1.2,M.body,2.3,.5,0,tg);gun({bl:6.2,r:.125,sl:[.6,5.3,.175],ev:[4.0,.5,.205]});
+return{L:7.6,Wd,H:2.4,ring:[-.3,1.28],mount:[2.35,.5],bl:6.2,trk:{L:6.6,tw:.6,zc:1.42,nw:6,wr:.38,rr:.43,rf:.43,sp:'r',nr:3},dec:[.0,.42,1.72,.95],cmdr:[-.4,1.0,.75],ant:[-2.2,.85,-1.2,2.4]}}
+VH.type99a=K=>t99(K,0);VH.type99a2=K=>t99(K,1);
+// 04A式歩兵戦闘車
+VH.zbd04a=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.2;
+sd([[-3.35,.5],[-3.35,1.4],[-3.0,1.55],[.7,1.55],[2.4,1.3],[3.2,1.0],[3.35,.6],[3.35,.5]],2.5,M.body,0,0,0,g,.05);
+add(.1,.8,2.1,M.b2,-3.37,1.0,0);bolts(g,-3.44,1.0,0,5,.35,'z');hatch(g,-2.3,1.58,.7,.28,true);hatch(g,-2.3,1.58,-.7,.28,false);grille(g,-1.2,1.59,0,1.4,1.8,8);hatch(g,2.3,1.35,.5,.28,true);for(let i=-1;i<=1;i++)add(.12,.1,.16,M.gl,2.65,1.3,.5+i*.22);
+hullKit(K,{xr:-3.35,xf:3.35,yn:.65,tf:.75,tr:.8,flapF:1.3,flapR:1.3,lamp:[1.0,1.1,1.1,1.1]});
+both(s=>{add(5.4,.8,.2,M.body,-.2,1.0,s*(Wd/2-.08));add(5.4,.06,.4,M.b2,-.2,1.42,s*(Wd/2-.1));eraB(g,-.2,1.05,s*(Wd/2+.02),4.0,.6,.1);bolts(g,-.2,.75,s*(Wd/2+.0),6,.8,'x');add(.9,.5,.12,M.rub,3.2,.6,s*(Wd/2-.2),g,0,s*.1);add(4.8,.45,.12,M.b2,-.2,.6,s*(Wd/2-.05));exhaust(g,-3.4,1.0,s*.9,.1,.3,0,PI/2);tow(g,.5,1.6,s*1.0,2.2);jerry(g,-2.0,1.75,s*1.25,0)});
+add(.12,.7,2.1,M.b2,3.0,1.05,0,g,.8);
+const T=sym([[1.1,.8],[.4,1.15],[-.9,1.1],[-1.2,.7]]);pl(T,.76,M.body,0,0,0,tg,.08);pl(sym([[.8,.6],[-.9,.9]]),.12,M.b2,0,.76,0,tg,.03);
+turKit(K,{T,seam:[.5,.3,3,1.8,.85],lift:[[.4,.8,.7],[.4,.8,-.7]],mast:[[-.9,.8,.6,.5]]});
+both(s=>{eraB(tg,.9,.42,s*.7,.4,.55,.3,0,-s*.5);smk(tg,.55,.55,s*1.12,3,.12,0,1);sensor(tg,1.0,.62,s*.65,-s*.4)});
+cup(tg,-.6,.82,.55,.28,.2);mg(tg,-.8,1.2,.58,.7);sight(tg,.1,.9,-.5,.4,.25,.35,true);hatch(tg,-.7,.8,-.55,.28,true);add(.2,.2,.3,M.dark,-.2,1.02,-.5,tg);
+sph(.28,.34,.5,M.b2,1.15,.38,0,tg,PI);add(.4,.6,.9,M.body,1.15,.38,0,tg);gun({bl:2.4,r:.085,sl:[.4,1.7,.12],slr:0,mb:0});
+cyl(.04,.04,2.2,M.dark,1.9,0,.2,K.bp,0,PI/2,8);cyl(.05,.05,.3,M.mid,2.9,0,.2,K.bp,0,PI/2,8);
+return{L:6.7,Wd,H:2.7,ring:[.3,1.55],mount:[1.15,.38],bl:2.4,trk:{L:5.8,tw:.58,zc:1.38,nw:6,wr:.35,rr:.4,rf:.4,sp:'r',nr:3},dec:[0,.35,1.0,.5],cmdr:[-.6,.85,.55],ant:[-1.2,.8,-.6,2.2],eraX:.3}};
+// 15式軽戦車
+VH.ztq15=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.3;
+sd([[-3.55,.5],[-3.55,1.15],[-3.15,1.28],[1.2,1.28],[3.0,.92],[3.55,.7],[3.55,.5]],2.4,M.body,0,0,0,g,.04);grille(g,-2.4,1.31,0,1.6,1.8,9);add(.1,.55,2.0,M.dark,-3.57,.9,0);for(let i=0;i<4;i++)add(.04,.05,1.8,M.mid,-3.6,.75+i*.09,0);
+hullKit(K,{xr:-3.55,xf:3.55,yn:.65,fend:[-3.2,2.0,1.1,.6,1.4],tf:.7,tr:.75,flapF:1.2,flapR:1.2,lamp:[.95,1.15,.98,1.15],hatch:[2.7,1.0,0,.28,true],links:[-.2,1.14,1.1,5]});
+both(s=>{add(2.6,.65,.28,M.body,1.0,.8,s*(Wd/2-.14));add(2.6,.05,.4,M.b2,1.0,1.14,s*(Wd/2-.14));eraB(g,1.0,.82,s*(Wd/2),2.4,.55,.1);add(2.5,.55,.1,M.body,-2.0,.78,s*(Wd/2-.06));bolts(g,-2.0,.95,s*(Wd/2+.0),5,.5,'x',.022);add(.9,.5,.12,M.rub,3.05,.6,s*(Wd/2-.2),g,0,s*.1);eraB(g,3.0,.88,s*.6,.5,.12,.5,0,0,-.3);tow(g,0,1.16,s*1.0,3.0);crate(g,-3.0,1.42,s*1.0,.6,.35,.4,M.tan)});
+const T=sym([[2.2,.5],[1.4,1.35],[.2,1.6],[-1.4,1.55],[-1.9,1.4]]);pl(T,.78,M.body,0,0,0,tg,.09);pl(sym([[1.4,.7],[-1.6,1.4]]),.14,M.b2,0,.78,0,tg,.03);
+sd([[-2.8,0],[-2.8,.7],[-2.5,.84],[-1.5,.84],[-1.5,0]],2.9,M.body,0,0,0,tg,.05);
+turKit(K,{T,seam:[1.0,.4,4,2.5,.9],lift:[[1.0,.82,.9],[1.0,.82,-.9],[-1.2,.82,1.1],[-1.2,.82,-1.1]],mast:[[-2.2,.86,1.1,.5]]});
+for(let i=0;i<3;i++)both(s=>eraB(tg,1.9-i*.1,.4,s*(.4+i*.35),.45,.62,.3,0,-s*.25));
+both(s=>{eraB(tg,.5,.42,s*1.55,1.1,.55,.18);smk(tg,1.3,.55,s*1.45,3,.14,0,1);crate(tg,-2.2,.4,s*1.3,.6,.4,.5,M.b2);sensor(tg,1.8,.6,s*.8,-s*.4)});
+cup(tg,-.4,.84,.7,.28,.2);mg(tg,-.6,1.2,.72,.7);add(.04,.3,.36,M.b2,-.45,1.22,.5,tg);hatch(tg,-1.0,.84,-.65,.3,true);sight(tg,.7,.92,-.6,.5,.28,.4,true);add(.2,.2,.3,M.dark,.4,1.06,-.6,tg);
+sph(.32,.38,.55,M.b2,2.15,.42,0,tg,PI);add(.5,.68,1.1,M.body,2.15,.42,0,tg);gun({bl:5.0,r:.105,sl:[.5,4.2,.15],mb:'slot'});
+return{L:7.1,Wd,H:2.3,ring:[-.2,1.28],mount:[2.2,.44],bl:5.0,trk:{L:6.1,tw:.58,zc:1.4,nw:6,wr:.36,rr:.4,rf:.4,sp:'r',nr:3},dec:[.1,.38,1.5,.95],cmdr:[-.4,.9,.7],ant:[-2.0,.85,-1.1,2.4]}};
+// ---------- ロシア系 (T-72/80/90系・96A・VT-4 共通骨格 + 専用ディテール) ----------
+function ru(K,o){const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=o.Wd||3.5,hl=o.hl||6.95,hx=hl/2;
+sd([[-hx,.5],[-hx,.95],[-hx+.35,1.05],[hx-1.75,1.05],[hx-.25,.55],[hx,.5]],2.3,M.body,0,0,0,g,.04);
+add(.08,.5,1.9,M.dark,-hx-.01,.8,0);if(o.gt)grille(g,-hx+1.2,1.09,0,1.4,1.6,10);else{add(1.4,.05,1.7,M.dark,-hx+1.2,1.09,0);for(let i=0;i<6;i++)add(.06,.07,1.6,M.mid,-hx+.6+i*.24,1.12,0)}
+both(s=>add(.5,.04,.5,M.b2,-hx+2.1,1.07,s*.5));hatch(g,hx-.8,.78,0,.26,true);add(.3,.35,.3,M.b2,hx-.9,.88,0);for(let i=-1;i<=1;i++)add(.1,.08,.12,M.gl,hx-.62,.9,i*.15);
+add(.9,.1,1.4,M.b2,hx-.6,.7,0,g,-.36);handle(g,hx-1.2,.95,.3,.5,'z');
+hullKit(K,{xr:-hx,xf:hx,yn:.55,tf:.65,tr:.7,flapF:1.2,flapR:1.2,lamp:[.8,1.2,.95,1.15],links:o.nolinks?0:[-.4,1.12,1.0,6]});
+both(s=>{add(hl-.6,.07,.6,M.body,-.2,1.0,s*1.45);add(hl-.6,.1,.04,M.b2,-.2,1.05,s*(1.45+.3));for(let i=0;i<5;i++)add(.05,.18,.55,M.dark,-hx+.6+i*(hl-1.3)/4,.9,s*1.45);add(1.0,.07,.6,M.body,hx-.15,.82,s*1.45,g);
+if(o.sk==='half'){add(3.2,.5,.06,M.rub,.4,.7,s*(Wd/2-.04));add(3.2,.04,.1,M.dark,.4,.96,s*(Wd/2-.04));bolts(g,.4,.9,s*(Wd/2+.0),5,.6,'x',.02)}
+else if(o.sk==='full'){add(hl-.8,.6,.09,M.body,-.1,.72,s*(Wd/2-.06));add(hl-.8,.05,.16,M.b2,-.1,1.04,s*(Wd/2-.06));for(let i=0;i<8;i++)eraB(g,-2.5+i*.7,.78,s*(Wd/2+.0),.55,.45,.1)}
+else if(o.sk==='thin'){add(hl-.7,.55,.07,M.body,-.2,.74,s*(Wd/2-.05));add(hl-.7,.04,.14,M.b2,-.2,1.02,s*(Wd/2-.05));for(let i=0;i<6;i++){add(.05,.55,.1,M.b2,-2.4+i*.95,.74,s*(Wd/2-.06));bolts(g,-1.9+i*.95,.85,s*(Wd/2+.0),2,.35,'x',.02)}}
+add(.9,.4,.12,M.rub,hx+.05,.6,s*(Wd/2-.25),g,0,s*.1);add(.3,.15,.5,M.tan,hx-1.4,1.1,s*1.25);
+if(o.drums)drum(g,-hx-.2,.95,s*.7,.27,.9);add(.8,.15,.3,M.rst,.2,1.06,s*1.35,g);tow(g,-.2,1.12,s*1.15,2.2);exhaust(g,-hx+.5,1.15,s*1.2,.1,.4,0,PI/2);add(.8,.03,.12,M.met,-1.6,1.1,s*1.2);crate(g,-2.1,1.2,s*1.3,.6,.25,.35,M.b2)});
+if(o.drums){add(.1,.1,1.9,M.dark,-hx-.3,1.0,0,g);add(1.0,.1,.15,M.dark,-hx-.2,.88,0,g)}
+if(o.era){for(let i=0;i<4;i++){const z=(i-1.5)*.5;eraB(g,hx-1.1,.85,z,.75,.12,.46,-.36)}if(o.era>1)both(s=>eraB(g,hx-.7,.72,s*1.0,.5,.12,.4,-.36))}
+const tcast=o.cast,h=o.h||.78;let T;
+if(tcast){T=ell(1.8,1.55,22,0);pl(T,h,M.body,0,0,0,tg,.16);pl(ell(1.4,1.2,20,-.1),.14,M.b2,0,h,0,tg,.04);pl(sym([[1.9,.55],[1.5,.7]]),.6,M.body,0,0,0,tg,.05);add(.6,.4,1.3,M.b2,-1.65,.28,0,tg);add(.2,.1,1.2,M.dark,-2.0,.45,0,tg)}
+else{T=sym(o.half);pl(T,h,M.body,0,0,0,tg,o.bv||.14);pl(sym(o.half.map(q=>[q[0]*.82-.05,q[1]*.8])),.14,M.b2,0,h,0,tg,.03);
+if(o.bus)sd([[-o.bus[0],0],[-o.bus[0],o.bus[1]],[-o.bus[0]+.3,o.bus[1]+.12],[-1.4,o.bus[1]+.12],[-1.4,0]],o.bus[2],M.body,0,0,0,tg,.05)}
+turKit(K,{T,seam:[.9,.4,3,2.2,h+.14],lift:[[1.1,h+.12,.9],[1.1,h+.12,-.9],[-1.0,h+.12,1.0],[-1.0,h+.12,-1.0]],mast:[[-1.6,h,1.2,.5]]});
+const fx=o.fx||1.9;
+if(o.era){const sz=o.era>1?.55:.4,sh=o.era>1?.7:.55;for(let i=0;i<(o.era>1?3:4);i++)both(s=>eraB(tg,fx-.1-i*.05,h*.55,s*(.45+i*.4),sz,sh,.28,0,-s*.3));
+both(s=>{for(let i=0;i<3;i++)eraB(tg,.5-i*.7,h*.55,s*(o.zt||1.62),.7,sh-.05,.16)})}
+both(s=>{smk(tg,fx-.3,h*.7,s*(o.zt||1.62)-s*.1,3,.12,0,1);if(o.shtora){add(.5,.42,.48,M.red,fx+.05,h*.6,s*.85,tg,0,-s*.2);add(.04,.3,.36,M.dark,fx+.3,h*.6,s*.85,tg,0,-s*.2);add(.06,.18,.18,M.gl,fx+.32,h*.6,s*.85,tg,0,-s*.2)}crate(tg,-2.0,.3,s*.9,.55,.35,.5,M.tan);sensor(tg,fx-.1,h*.8,s*.55,-s*.3)});
+cup(tg,-.45,h+.02,.65,.3,.2);mg(tg,-.65,h+.44,.68,.95);add(.04,.34,.4,M.b2,-.5,h+.44,.46,tg);hatch(tg,-.7,h+.02,-.6,.3,true);sight(tg,.7,h+.14,-.6,.55,.3,.42,true);add(.3,.22,.34,M.dark,.55,h+.32,-.6,tg);sph(.2,.16,.2,M.b2,.7,h+.3,.6,tg,PI/2);
+cyl(.09,.09,1.2,M.mid,-1.6,h+.12,-1.05,tg,0,PI/2,8);if(o.slat)wire(tg,-2.35,.7,0,.5,1.0,2.8);
+sph(.4,h*.55,.6,M.b2,fx+.2,h*.5,0,tg,PI);add(.6,h*.9,1.3,M.body,fx+.2,h*.5,0,tg);gun({bl:o.bl||6.0,r:.125,sl:o.sl,ev:o.ev,mb:0});
+return{L:o.hl||6.95,Wd,H:o.H||2.35,ring:[o.rx||-.2,1.05],mount:[fx+.25,h*.5+.0],bl:o.bl||6.0,trk:{L:hl-.5,tw:.58,zc:Wd/2-.4,nw:o.nw||6,wr:o.wr||.4,rr:.44,rf:.44,sp:'r',nr:o.nr===undefined?3:o.nr,wx0:.65,wx1:.65},dec:[0,h*.5,o.zd||1.55,.9],cmdr:[-.45,h+.05,.65],ant:[-1.3,h,-1.1,2.8],eraX:.6}}
+VH.t72b3=K=>ru(K,{cast:1,era:1,sk:'half',drums:1,ev:[3.5,.5,.2],nr:3,H:2.3});
+VH.t80bvm=K=>ru(K,{cast:1,era:2,sk:'thin',gt:1,hl:7.1,nr:4,sl:[.6,5.1,.165],ev:[3.7,.5,.2],nw:6,wr:.42,H:2.4,zt:1.6});
+VH.t90a=K=>ru(K,{half:[[2.1,.58],[1.55,1.25],[.4,1.62],[-1.1,1.66],[-1.7,1.45]],h:.82,bv:.18,era:2,shtora:1,sk:'half',drums:1,sl:[.6,5.0,.165],ev:[3.7,.5,.2],bus:[2.4,.7,1.9],H:2.35,zt:1.6,zd:1.6});
+VH.t90m=K=>ru(K,{half:[[2.3,.62],[1.6,1.55],[.5,1.75],[-1.4,1.75],[-2.1,1.62]],h:.9,bv:.12,era:2,sk:'full',drums:1,slat:1,sl:[.6,5.2,.165],ev:[3.8,.5,.2],bus:[3.0,.85,3.0],H:2.55,zt:1.75,zd:1.78,fx:2.1,rx:-.35});
+VH.type96a=K=>ru(K,{half:[[2.2,.55],[1.5,1.3],[.4,1.6],[-1.2,1.65],[-1.8,1.5]],h:.84,bv:.16,era:2,sk:'thin',sl:[.6,5.0,.165],ev:[3.7,.5,.2],bus:[2.5,.72,2.0],Wd:3.4,H:2.35,zt:1.62,zd:1.62});
+VH.vt4=K=>ru(K,{half:[[2.4,.55],[1.7,1.25],[.6,1.68],[-1.4,1.68],[-2.0,1.5]],h:.86,bv:.12,era:2,sk:'thin',hl:7.4,nr:3,sl:[.6,5.3,.17],ev:[3.9,.5,.2],bus:[2.9,.8,2.6],Wd:3.5,H:2.4,zt:1.68,zd:1.68,fx:2.1});
+// T-14 アルマータ
+VH.t14=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.5;
+sd([[-4.2,.5],[-4.2,1.25],[-3.8,1.38],[1.2,1.38],[3.5,.92],[4.2,.7],[4.2,.5]],2.5,M.body,0,0,0,g,.05);grille(g,-2.8,1.42,0,1.9,2.0,12);add(.1,.7,2.2,M.dark,-4.22,.98,0);for(let i=0;i<6;i++)add(.04,.05,2.0,M.mid,-4.25,.78+i*.09,0);add(.5,.25,.5,M.b2,2.6,1.2,0);hatch(g,2.7,1.28,0,.25);for(let i=-1;i<=1;i++)add(.1,.08,.12,M.gl,2.95,1.22,i*.15);
+hullKit(K,{xr:-4.2,xf:4.2,yn:.68,tf:.8,tr:.85,flapF:1.3,flapR:1.3,lamp:[.98,1.2,1.0,1.2]});
+both(s=>{add(6.4,.07,.6,M.body,-.4,1.18,s*1.45);add(6.6,.9,.3,M.body,-.15,.76,s*(Wd/2-.17),g,0,0,0);add(6.6,.05,.4,M.b2,-.15,1.2,s*(Wd/2-.17));for(let i=0;i<9;i++)eraB(g,-2.8+i*.7,.8,s*(Wd/2+.0),.58,.55,.1);add(1.0,.5,.12,M.rub,3.9,.6,s*(Wd/2-.2),g,0,s*.1);tow(g,-.4,1.22,s*1.1,3.4);eraB(g,3.0,1.2,s*.9,.8,.12,.5,-.3);eraB(g,2.5,1.28,s*.9,.8,.12,.5,-.1);exhaust(g,-4.2,1.1,s*.9,.1,.3,0,PI/2);bolts(g,-.15,.55,s*(Wd/2+.0),7,.8,'x',.022)});
+const T=sym([[2.2,.75],[1.3,1.45],[-.6,1.6],[-1.7,1.4]]);pl(T,.52,M.body,0,0,0,tg,.08);pl(sym([[1.4,.8],[-.8,1.3],[-1.5,1.1]]),.1,M.b2,0,.52,0,tg,.03);
+sd([[-2.5,0],[-2.5,.42],[-2.2,.5],[-1.5,.5],[-1.5,0]],2.5,M.body,0,0,0,tg,.04);
+turKit(K,{T,seam:[.8,.4,4,2.4,.62],lift:[[.9,.58,.9],[.9,.58,-.9]],mast:[[-1.7,.6,.9,.5]]});
+both(s=>{add(.1,.55,.7,M.mid,1.3,.4,s*1.15,tg,0,-s*.7);add(.04,.45,.55,M.gl,1.34,.4,s*1.12,tg,0,-s*.7);add(.1,.45,.6,M.dark,.4,.4,s*1.62,tg,0,0);add(.1,.45,.6,M.dark,-.9,.4,s*1.55,tg);for(let i=0;i<3;i++)cyl(.045,.045,.4,M.dark,-.4+i*.3,.62,s*1.2,tg,0,0,8);add(.12,.42,.12,M.dark,.9,.62,s*.85,tg);add(.12,.42,.12,M.dark,-1.4,.62,s*.95,tg);eraB(tg,1.6,.35,s*.95,.5,.4,.25,0,-s*.5)});
+sight(tg,.4,.68,.55,.55,.3,.4,true);sph(.22,.2,.22,M.b2,.4,.85,.55,tg,PI/2);add(.2,.2,.2,M.gl,.58,.88,.55,tg);sight(tg,.2,.66,-.5,.4,.24,.35,true);add(.55,.3,.45,M.b2,-1.1,.62,-.65,tg);mg(tg,-1.0,.82,-.65,.6);
+sph(.35,.3,.55,M.b2,2.2,.3,0,tg,PI);add(.5,.5,1.0,M.body,2.2,.3,0,tg);gun({bl:6.6,r:.13,sl:[.7,5.4,.165],slr:0,ev:[4.4,.45,.19]});
+return{L:8.7,Wd,H:2.35,ring:[-.4,1.38],mount:[2.2,.3],bl:6.6,trk:{L:7.7,tw:.62,zc:1.45,nw:7,wr:.4,rr:.46,rf:.46,sp:'r',nr:4,wx0:.7,wx1:.7},dec:[-.1,.28,1.55,.95],cmdr:null,ant:[-1.5,.7,.9,2.4],eraX:.7}};
+// BMP-3
+VH.bmp3=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.2;
+sd([[-3.55,.5],[-3.55,1.3],[-3.2,1.42],[.8,1.42],[2.3,1.2],[3.1,.95],[3.55,.7],[3.55,.5]],2.5,M.body,0,0,0,g,.05);
+add(.1,.8,2.2,M.b2,-3.57,.95,0);bolts(g,-3.64,.95,0,6,.35,'z');grille(g,-2.2,1.46,0,1.6,2.0,9);hatch(g,2.1,1.28,.4,.26,true);for(let i=-1;i<=1;i++)add(.1,.08,.12,M.gl,2.42,1.22,.4+i*.15);hatch(g,.9,1.44,-.9,.26,true);hatch(g,.9,1.44,.9,.26,false);
+hullKit(K,{xr:-3.55,xf:3.55,yn:.7,tf:.7,tr:.8,flapF:1.2,flapR:1.2,lamp:[.95,1.05,.95,1.05]});
+both(s=>{add(5.6,.8,.18,M.body,-.2,.95,s*(Wd/2-.08));add(5.6,.06,.3,M.b2,-.2,1.38,s*(Wd/2-.1));add(.9,.5,.12,M.rub,3.2,.6,s*(Wd/2-.2),g,0,s*.1);add(5.0,.45,.12,M.b2,-.2,.55,s*(Wd/2-.05));eraB(g,-.4,1.0,s*(Wd/2+.0),2.4,.5,.1);crate(g,-2.6,1.6,s*1.1,.6,.3,.4,M.tan);exhaust(g,-3.5,1.1,s*.9,.1,.3,0,PI/2);tow(g,.4,1.46,s*1.0,2.0);jerry(g,-1.4,1.62,s*1.3,0);for(let i=0;i<4;i++)add(.05,.5,.12,M.b2,-1.6+i*1.2,.95,s*(Wd/2-.05))});
+add(.1,.8,2.4,M.b2,3.0,1.0,0,g,.9);add(.2,.06,2.2,M.dark,2.85,1.38,0,g);
+const T=ell(1.05,1.1,18,0);pl(T,.62,M.body,0,0,0,tg,.1);pl(ell(.8,.85,16,-.05),.1,M.b2,0,.62,0,tg,.03);add(.7,.4,.6,M.b2,-.9,.3,0,tg);
+turKit(K,{T,seam:[.5,.3,2,1.4,.72],lift:[[.4,.7,.6],[.4,.7,-.6]],mast:[[-.8,.62,.6,.5]]});
+both(s=>smk(tg,.5,.55,s*1.0,3,.1,0,1));
+cup(tg,-.3,.7,.5,.26,.18);mg(tg,-.5,1.0,.52,.6);sight(tg,.3,.78,-.45,.4,.24,.34,true);add(.2,.2,.3,M.dark,.1,.95,-.45,tg);hatch(tg,-.55,.64,-.45,.26,true);sensor(tg,.9,.5,.8,-.3);
+sph(.28,.3,.45,M.b2,1.1,.35,0,tg,PI);add(.4,.5,.8,M.body,1.1,.35,0,tg);gun({bl:2.7,r:.095,ev:[1.4,.45,.14],mb:0});
+cyl(.045,.04,2.9,M.dark,1.5,.0,.22,K.bp,0,PI/2,8);cyl(.05,.05,.3,M.mid,2.8,0,.22,K.bp,0,PI/2,8);add(.3,.15,.2,M.mid,.2,0,.22,K.bp);
+return{L:7.14,Wd,H:2.4,ring:[.2,1.42],mount:[1.1,.38,-.12],bl:2.7,trk:{L:6.2,tw:.55,zc:1.4,nw:7,wr:.3,rr:.4,rf:.4,sp:'r',nr:3,wx0:.5,wx1:.5},dec:[-.2,.35,1.0,.5],cmdr:[-.3,.78,.5],ant:[-.8,.8,-.7,2.2],eraX:.3}};
+// 2S25 スプルート-SD
+VH.sprut=K=>{const{add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,M,tg,g,bp,PI}=K,Wd=3.15;
+sd([[-3.2,.5],[-3.2,1.05],[-2.8,1.18],[.4,1.18],[2.5,.9],[3.2,.7],[3.2,.5]],2.4,M.body,0,0,0,g,.04);grille(g,-2.0,1.22,0,1.6,1.8,9);add(.1,.5,2.0,M.dark,-3.22,.85,0);for(let i=0;i<4;i++)add(.04,.05,1.8,M.mid,-3.25,.7+i*.09,0);hatch(g,2.2,1.0,0,.28);for(let i=-1;i<=1;i++)add(.1,.08,.12,M.gl,2.5,.95,i*.15);
+hullKit(K,{xr:-3.2,xf:3.2,yn:.62,tf:.6,tr:.7,flapF:1.1,flapR:1.1,lamp:[.85,1.0,.9,1.0],links:[.2,1.0,1.0,5]});
+both(s=>{add(5.0,.07,.5,M.body,-.3,1.08,s*1.38);add(5.0,.1,.04,M.b2,-.3,1.13,s*1.62);add(5.2,.5,.09,M.body,-.2,.74,s*(Wd/2-.05));for(let i=0;i<6;i++){add(.06,.5,.12,M.b2,-2.4+i*.95,.74,s*(Wd/2-.06));bolts(g,-1.9+i*.95,.85,s*(Wd/2+.0),2,.3,'x',.02)}add(.8,.45,.12,M.rub,3.0,.58,s*(Wd/2-.2),g,0,s*.1);tow(g,-.1,1.12,s*1.0,2.6);crate(g,-2.7,1.35,s*1.0,.6,.4,.4,M.tan);exhaust(g,-3.2,1.0,s*.9,.1,.3,0,PI/2)});
+const T=sym([[1.6,.7],[.9,1.45],[-.9,1.5],[-1.5,1.25]]);pl(T,.62,M.body,0,0,0,tg,.1);pl(sym([[1.0,.8],[-1.0,1.2]]),.12,M.b2,0,.62,0,tg,.03);add(.9,.3,1.5,M.b2,-1.5,.3,0,tg);
+turKit(K,{T,seam:[.6,.3,3,1.8,.74],lift:[[.8,.66,.8],[.8,.66,-.8]],mast:[[-1.3,.66,.9,.5]]});
+both(s=>{smk(tg,1.0,.5,s*1.2,3,.12,0,1);eraB(tg,1.35,.35,s*.7,.4,.5,.25,0,-s*.5);crate(tg,-1.7,.35,s*.9,.5,.35,.4,M.tan);sensor(tg,1.35,.6,s*.55,-s*.3)});
+cup(tg,-.5,.74,.55,.27,.18);mg(tg,-.7,1.1,.58,.7);hatch(tg,-.7,.7,-.5,.28,true);sight(tg,.5,.82,-.55,.5,.26,.38,true);add(.2,.2,.3,M.dark,.3,.96,-.55,tg);
+sph(.32,.3,.55,M.b2,1.6,.36,0,tg,PI);add(.5,.56,1.1,M.body,1.6,.36,0,tg);gun({bl:5.2,r:.12,ev:[3.3,.5,.2],mb:0});
+return{L:7.0,Wd,H:2.3,ring:[.1,1.18],mount:[1.65,.36],bl:5.2,trk:{L:5.9,tw:.56,zc:1.38,nw:6,wr:.35,rr:.4,rf:.4,sp:'r',nr:3},dec:[0,.32,1.3,.8],cmdr:[-.5,.78,.55],ant:[-1.2,.7,-.7,2.4],eraX:.4}};
+
+// ===== 車両モデル生成: 共通キット + 車両ごとの専用モデリング =====
+const hash01=n=>{n=Math.imul(n^(n>>>15),2246822519);n=Math.imul(n^(n>>>13),3266489917);return((n^(n>>>16))>>>0)/4294967296};
+// 国別迷彩 (色付きテクスチャ。車体色を基調に3色構成)
+function camoN(id,col){const key='c'+id;if(TXC[key])return TXC[key];let sd=0;for(const ch of id)sd=(sd*31+ch.charCodeAt(0))>>>0;const rn=()=>(sd=(sd*1664525+1013904223)>>>0)/4294967296,nat=natOf(id),S=256,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d'),B=new THREE.Color(col);
+const css=k=>'#'+k.getHexString(),sh=(k,f)=>B.clone().multiplyScalar(f),mix=(h,f)=>B.clone().lerp(new THREE.Color(h),f);
+let tones;if(nat==='ru')tones=[mix(0x5a4a2a,.55),mix(0x20261a,.7),sh(1,1.18)];else if(nat==='cn')tones=[mix(0x5a4a30,.5),sh(1,.55),mix(0x9c9560,.45)];else if(nat==='jp')tones=[mix(0x6b5a34,.5),sh(1,.58),mix(0x98a060,.3)];else if(['us','uk','de','fr','it'].includes(nat)&&B.r>B.g*1.05)tones=[mix(0x8a6a44,.45),sh(1,.78),mix(0xd8c090,.4)];else tones=[mix(0x4a3a24,.5),sh(1,.6),mix(0x9aa070,.3)];
+g.fillStyle=css(B);g.fillRect(0,0,S,S);
+const blob=(k,n,r0,r1,sq)=>{g.fillStyle=css(k);for(let i=0;i<n;i++){const x=rn()*S,y=rn()*S,r=r0+rn()*(r1-r0);for(const[ox,oy]of[[0,0],[S,0],[-S,0],[0,S],[0,-S]]){g.beginPath();for(let q=0;q<9;q++){const a=q/9*6.283,rr=r*(.55+rn()*.7);g.lineTo(x+ox+Math.cos(a)*rr,y+oy+Math.sin(a)*rr*sq)}g.closePath();g.fill()}}};
+if(nat==='ru'){blob(tones[0],10,16,34,.55);blob(tones[1],6,8,18,.4);g.fillStyle=css(tones[1]);for(let i=0;i<7;i++){g.fillRect(rn()*S,rn()*S,22+rn()*40,3+rn()*3)}}
+else if(nat==='cn'){const q=8;for(const k of tones){g.fillStyle=css(k);for(let i=0;i<70;i++){g.fillRect(Math.floor(rn()*S/q)*q,Math.floor(rn()*S/q)*q,q*(1+Math.floor(rn()*3)),q*(1+Math.floor(rn()*2)))}}}
+else{blob(tones[0],9,20,40,.65);blob(tones[1],7,12,26,.6);blob(tones[2],4,8,16,.6)}
+// 汚れ・退色・縦の雨だれ
+for(let i=0;i<350;i++){g.fillStyle='rgba('+(30+rn()*40|0)+','+(25+rn()*30|0)+',15,'+(.03+rn()*.04)+')';g.fillRect(rn()*S,rn()*S,1+rn()*2,1+rn()*2)}
+for(let i=0;i<22;i++){const x=rn()*S,y=rn()*S,h=14+rn()*40,gr=g.createLinearGradient(0,y,0,y+h);gr.addColorStop(0,'rgba(20,16,10,.0)');gr.addColorStop(.3,'rgba(20,16,10,.16)');gr.addColorStop(1,'rgba(20,16,10,0)');g.fillStyle=gr;g.fillRect(x,y,1.6+rn()*1.6,h)}
+const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return TXC[key]=t}
+function bumpTex(){if(TXC.bump)return TXC.bump;const S=128,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');g.fillStyle='#808080';g.fillRect(0,0,S,S);let s=7;const rn=()=>(s=(s*1664525+1013904223)>>>0)/4294967296;
+for(let i=0;i<2600;i++){const v=118+rn()*24|0;g.fillStyle='rgb('+v+','+v+','+v+')';g.fillRect(rn()*S,rn()*S,1+rn()*2,1+rn()*2)}
+g.strokeStyle='#5a5a5a';g.lineWidth=1;for(let i=0;i<2;i++){g.beginPath();g.moveTo(0,i*64+.5);g.lineTo(S,i*64+.5);g.stroke();g.beginPath();g.moveTo(i*64+.5,0);g.lineTo(i*64+.5,S);g.stroke()}
+g.fillStyle='#b0b0b0';for(let i=0;i<4;i++)for(let j=0;j<4;j++){g.fillRect(i*32+6,j*32+6,2,2)}
+const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return TXC.bump=t}
+function eraTex(){if(TXC.era)return TXC.era;const S=64,c=document.createElement('canvas');c.width=c.height=S;const g=c.getContext('2d');g.fillStyle='#454b52';g.fillRect(0,0,S,S);g.strokeStyle='#22262a';g.lineWidth=2;g.strokeRect(2,2,S-4,S-4);g.beginPath();g.moveTo(S/2,2);g.lineTo(S/2,S-2);g.moveTo(2,S/2);g.lineTo(S-2,S/2);g.stroke();g.fillStyle='#7d858c';for(const[x,y]of[[8,8],[56,8],[8,56],[56,56],[32,32]]){g.fillRect(x-1.5,y-1.5,3,3)}
+for(let i=0;i<120;i++){g.fillStyle='rgba(0,0,0,'+(Math.random()*.12)+')';g.fillRect(Math.random()*S,Math.random()*S,2,2)}
+const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return TXC.era=t}
+function buildTank(d){
+const id=d.id,C=new THREE.Color(d.color),PI=Math.PI,mt=(c,r,m,vc)=>new THREE.MeshStandardMaterial({color:c,roughness:r===undefined?.88:r,metalness:m===undefined?.12:m,vertexColors:!!vc});
+const M={body:mt(0xffffff,.9,.1,1),b2:mt(C.clone().multiplyScalar(.62),.9,.1,1),b3:mt(C.clone().lerp(new THREE.Color(0xa89466),.3),.9,.1,1),dark:mt(0x1a1a1d,.85,.2,1),mid:mt(0x2c2f2a,.8,.25,1),era:mt(0xffffff,.7,.3),rub:mt(0x0e0e10,.95,0,1),gl:mt(0x233a4a,.2,.7,1),met:mt(0x45484b,.45,.65,1),rst:mt(0x4a3d2a,.95,.1,1),tan:mt(0x6b6247,.95,.05,1),red:mt(0xaa2222,.6,.1,1),gr:mt(0x4b5a3a,.9,.05,1),blk:mt(0x050506,.9,0,1)};
+M.body.map=camoN(id,d.color);M.body.bumpMap=bumpTex();M.body.bumpScale=.2;M.era.map=eraTex();M.b2.bumpMap=bumpTex();M.b2.bumpScale=.15;
+// 非結合メッシュ用 (頂点色なし)
+const NV={mid:mt(0x2c2f2a,.8,.25),dark:mt(0x1a1a1d,.85,.2),rub:mt(0x0e0e10,.95,0)};
+const g=new THREE.Group(),tg=new THREE.Group(),bp=new THREE.Group(),bar=new THREE.Group(),EM=[];
+g.add(tg);tg.add(bp);bp.add(bar);
+const reg=(o,m,p)=>{o.castShadow=true;(p||g).add(o);if(m===M.era){EM.push([o,p||g]);o.userData.keep=1}return o};
+const add=(w,h,dd,m,x,y,z,p,rz,ry,rx)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,dd),m);o.position.set(x,y,z);o.rotation.set(rx||0,ry||0,rz||0);return reg(o,m,p)};
+const cyl=(r,r2,h,m,x,y,z,p,rx,rz,seg,ry)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r2,h,seg||14),m);o.position.set(x,y,z);o.rotation.set(rx||0,ry||0,rz||0);return reg(o,m,p)};
+const sph=(rx,ry,rz,m,x,y,z,p,ph)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(1,16,10,0,PI*2,0,ph||PI),m);o.scale.set(rx,ry,rz);o.position.set(x,y,z);return reg(o,m,p)};
+const tor=(r,tb,m,x,y,z,p,rx,ry,rz)=>{const o=new THREE.Mesh(new THREE.TorusGeometry(r,tb,6,14),m);o.position.set(x,y,z);o.rotation.set(rx||0,ry||0,rz||0);return reg(o,m,p)};
+const extr=(s,o,m,x,y,z,p)=>{};
+const pl=(pts,h,m,x,y,z,p,bv,ry)=>{const s=new THREE.Shape();pts.forEach((q,i)=>i?s.lineTo(q[0],-q[1]):s.moveTo(q[0],-q[1]));bv=bv||0;
+const o=new THREE.ExtrudeGeometry(s,bv?{depth:h-2*bv,bevelEnabled:true,bevelThickness:bv,bevelSize:bv,bevelOffset:-bv,bevelSegments:2}:{depth:h,bevelEnabled:false});
+o.translate(0,0,bv);o.rotateX(-PI/2);const e=new THREE.Mesh(o,m);e.position.set(x||0,y||0,z||0);e.rotation.y=ry||0;return reg(e,m,p)};
+const sd=(pts,w,m,x,y,z,p,bv)=>{const s=new THREE.Shape();pts.forEach((q,i)=>i?s.lineTo(q[0],q[1]):s.moveTo(q[0],q[1]));bv=bv||0;
+const o=new THREE.ExtrudeGeometry(s,bv?{depth:w-2*bv,bevelEnabled:true,bevelThickness:bv,bevelSize:bv,bevelOffset:-bv,bevelSegments:2}:{depth:w,bevelEnabled:false});
+o.translate(0,0,-w/2+bv);const e=new THREE.Mesh(o,m);e.position.set(x||0,y||0,z||0);return reg(e,m,p)};
+const dome=(rx,h,rz,m,x,y,z,p)=>sph(rx,h,rz,m,x,y,z,p,PI/2);
+const ell=(rx,rz,n,cx)=>{const a=[];for(let i=0;i<n;i++){const t=i/n*PI*2;a.push([(cx||0)+Math.cos(t)*rx,Math.sin(t)*rz])}return a};
+const sym=h=>h.concat(h.slice().reverse().map(q=>[q[0],-q[1]]));
+const both=f=>{f(-1);f(1)};
+// 増加装甲(ERA): 枠+プレート。プレートのみ被弾で消える
+const eraB=(p,x,y,z,w,h,dd,rz,ry,rx)=>{if(!d.era)return;add(w+.05,h+.05,dd*.55,M.dark,x,y,z,p,rz,ry,rx);return add(w,h,dd,M.era,x,y,z,p,rz,ry,rx)};
+const smk=(p,x,y,z,n,sp,tilt,ax)=>{if(ax)add(n*sp+.06,.1,.12,M.mid,x,y-.12,z,p);else add(.12,.1,n*sp+.06,M.mid,x,y-.12,z,p);for(let i=0;i<n;i++){const o=(i-(n-1)/2)*sp;cyl(.052,.05,.28,M.dark,x+(ax?o:0),y,z+(ax?0:o),p,0,tilt===undefined?-1:tilt,8);cyl(.03,.03,.04,M.blk,x+(ax?o:0)+.1,y+.12,z+(ax?0:o),p,0,tilt===undefined?-1:tilt,6)}};
+const hatch=(p,x,y,z,r,open)=>{cyl(r*1.08,r*1.08,.1,M.b2,x,y+.02,z,p,0,0,16);cyl(r,r,.05,M.mid,x,y+.07,z,p,0,0,16);cyl(r*.9,r*.9,.05,M.b2,x+(open?-r*.55:0),y+(open?.2:.1),z,p,0,open?.95:0,16);tor(r*.55,.014,M.dark,x+(open?-r*.55:0)+(open?-.03:0),y+(open?.24:.14),z,p,PI/2,0,open?.95:0)};
+const cup=(p,x,y,z,r,hh)=>{hh=hh||.22;cyl(r*1.1,r*1.12,.1,M.b2,x,y+.04,z,p,0,0,16);cyl(r,r*1.05,hh,M.b2,x,y+hh/2,z,p,0,0,16);cyl(r*.86,r*.86,.06,M.dark,x,y+hh+.03,z,p,0,0,16);for(let i=0;i<9;i++){const a=i/9*PI*2;add(.1,.1,.07,M.gl,x+Math.cos(a)*r*.99,y+hh*.62,z+Math.sin(a)*r*.99,p,0,-a)}tor(r*.9,.02,M.dark,x,y+hh+.07,z,p,PI/2)};
+const mg=(p,x,y,z,len)=>{len=len||.9;add(.36,.2,.16,M.dark,x,y,z,p);cyl(.026,.026,len,M.dark,x+len/2+.1,y+.02,z,p,0,PI/2,8);cyl(.04,.04,.18,M.mid,x+.22,y+.02,z,p,0,PI/2,8);add(.3,.18,.22,M.mid,x-.05,y-.18,z+.02,p);add(.2,.1,.05,M.dark,x-.15,y+.1,z,p);cyl(.03,.03,.3,M.dark,x-.1,y-.1,z,p,0,0,6)};
+const sight=(p,x,y,z,w,h,dd,lens)=>{add(w,h,dd,M.b2,x,y,z,p);add(.05,h*.58,dd*.66,M.gl,x+w/2+.012,y+h*.04,z,p);add(w*1.04,.04,dd*1.04,M.dark,x,y+h/2,z,p);if(lens){cyl(.065,.065,.08,M.gl,x+w/2+.04,y+h*.22,z+dd*.2,p,0,PI/2,10);cyl(.045,.045,.1,M.gl,x+w/2+.03,y+h*.22,z-dd*.22,p,0,PI/2,10)}};
+const grille=(p,x,y,z,w,dd,n)=>{add(w,.05,dd,M.dark,x,y,z,p);for(let i=0;i<n;i++)add(.06,.08,dd*.94,M.mid,x-w/2+.1+i*(w-.2)/Math.max(1,n-1),y+.06,z,p,0,0,.0);add(w*1.03,.07,.06,M.b2,x,y+.04,z-dd/2,p);add(w*1.03,.07,.06,M.b2,x,y+.04,z+dd/2,p);add(.06,.07,dd,M.b2,x-w/2,y+.04,z,p);add(.06,.07,dd,M.b2,x+w/2,y+.04,z,p)};
+const wire=(p,x,y,z,w,h,dd)=>{for(const sx of[-1,1])for(const sz of[-1,1])add(.035,h,.035,M.dark,x+sx*w/2,y,z+sz*dd/2,p);for(const sy of[-1,0,1]){add(w,.03,.03,M.dark,x,y+sy*h/2,z-dd/2,p);add(w,.03,.03,M.dark,x,y+sy*h/2,z+dd/2,p);add(.03,.03,dd,M.dark,x-w/2,y+sy*h/2,z,p);add(.03,.03,dd,M.dark,x+w/2,y+sy*h/2,z,p)}for(let i=1;i<6;i++)add(.025,h,.025,M.dark,x-w/2,y,z-dd/2+i*dd/6,p)};
+const drum=(p,x,y,z,r,l)=>{cyl(r,r,l,M.gr,x,y,z,p,PI/2,0,14);for(const k of[-1,1])cyl(r*1.03,r*1.03,.06,M.dark,x,y,z+k*(l/2-.05),p,PI/2,0,14);cyl(r*1.03,r*1.03,.05,M.dark,x,y,z,p,PI/2,0,14);add(.09,.12,.09,M.dark,x,y+r+.04,z,p);add(.5,.04,.05,M.dark,x,y+r*.4,z+l/2+.04,p)};
+const tow=(p,x,y,z,l)=>{add(l,.07,.07,M.dark,x,y,z,p);add(l,.07,.07,M.dark,x,y+.11,z,p);for(const k of[-1,1])tor(.08,.025,M.dark,x+k*(l/2),y+.05,z,p,0,PI/2,0);for(let i=0;i<4;i++)add(.06,.28,.06,M.mid,x-l/2+.4+i*(l-.8)/3,y+.05,z,p)};
+const light=(p,x,y,z)=>{add(.24,.18,.2,M.dark,x,y,z,p);add(.04,.12,.15,M.gl,x+.12,y,z,p);add(.2,.04,.22,M.dark,x,y+.11,z,p);for(const k of[-1,1])add(.03,.14,.03,M.dark,x+.13,y,z+k*.11,p)};
+const handle=(p,x,y,z,len,ax)=>{const L=len||.4;if(ax==='z'){add(.03,.03,L,M.met,x,y,z,p);for(const k of[-1,1])add(.03,.08,.03,M.met,x,y-.04,z+k*L/2,p)}else{add(L,.03,.03,M.met,x,y,z,p);for(const k of[-1,1])add(.03,.08,.03,M.met,x+k*L/2,y-.04,z,p)}};
+const bolts=(p,x,y,z,n,sp,ax,r)=>{for(let i=0;i<n;i++){const o=(i-(n-1)/2)*sp;cyl(r||.025,r||.025,.03,M.mid,x+(ax==='x'?o:0),y,z+(ax==='x'?0:o),p,PI/2*(ax==='x'?1:0),ax==='x'?0:PI/2,6)}};
+const links=(p,x,y,z,n)=>{for(let i=0;i<n;i++)add(.12,.04,.5,M.rst,x+i*.1,y+i*.01,z,p,0,0,0);add(n*.1+.1,.03,.06,M.dark,x+(n-1)*.05,y+.04,z+.12,p);add(n*.1+.1,.03,.06,M.dark,x+(n-1)*.05,y+.04,z-.12,p)};
+const jerry=(p,x,y,z,ry)=>{add(.4,.5,.16,M.gr,x,y,z,p,0,ry||0);add(.14,.05,.1,M.dark,x,y+.28,z,p,0,ry||0);add(.3,.04,.17,M.dark,x,y+.1,z,p,0,ry||0)};
+const crate=(p,x,y,z,w,h,dd,m)=>{add(w,h,dd,m||M.tan,x,y,z,p);for(const k of[-1,1])add(.04,h*1.02,dd*1.04,M.dark,x+k*w*.32,y,z,p);add(w*.2,.06,.04,M.met,x,y+h*.2,z+dd/2+.02,p)};
+const exhaust=(p,x,y,z,r,l,rx,rz)=>{cyl(r,r*1.05,l,M.dark,x,y,z,p,rx,rz,12);cyl(r*.75,r*.75,l*1.02,M.blk,x,y,z,p,rx,rz,10)};
+const mud=(p,x,y,z,w,h)=>{add(.08,h,w,M.rub,x,y,z,p);add(.1,.06,w*1.04,M.dark,x,y-h/2,z,p)};
+const sensor=(p,x,y,z,ry)=>{add(.1,.12,.12,M.dark,x,y,z,p,0,ry||0);add(.03,.08,.09,M.gl,x+.06,y,z,p,0,ry||0)};
+const mast=(p,x,y,z,h)=>{cyl(.018,.018,h,M.dark,x,y+h/2,z,p,0,0,6);add(.22,.015,.015,M.dark,x,y+h*.9,z,p);cyl(.05,.05,.07,M.dark,x,y+.03,z,p,0,0,8)};
+const ammo=(p,x,y,z,ry)=>{add(.34,.2,.16,M.gr,x,y,z,p,0,ry||0);add(.3,.04,.12,M.dark,x,y+.1,z,p,0,ry||0);add(.05,.06,.18,M.met,x+.12,y+.12,z,p,0,ry||0)};
+const cmantlet=(p,x,y,rx,ry,rz)=>{sph(rx,ry,rz,M.body,x,y,0,p,PI);};
+// 砲身 (テーパー・熱防護カバー・排煙器・砲口)
+const gun=o=>{const bl=o.bl,r=o.r||.12;
+cyl(r*1.0,r*.9,bl,M.dark,bl/2,0,0,bar,0,PI/2,14);cyl(r*1.3,r*1.1,.7,M.dark,.35,0,0,bar,0,PI/2,14);
+if(o.sl){const a=o.sl[0],b=o.sl[1],rs=o.sl[2];cyl(rs,rs*.97,b-a,M.mid,(a+b)/2,0,0,bar,0,PI/2,14);if(o.slr!==0)for(let i=0;i<=5;i++)cyl(rs*1.05,rs*1.05,.045,M.dark,a+(b-a)*i/5,0,0,bar,0,PI/2,14);cyl(rs*1.09,rs*1.0,.12,M.dark,a+.06,0,0,bar,0,PI/2,14);cyl(rs*1.0,rs*1.09,.12,M.dark,b-.06,0,0,bar,0,PI/2,14);add(.3,.04,rs*2.1,M.rst,(a+b)/2,rs+.02,0,bar,0,0,0)}
+const evc=e=>{if(!e)return;cyl(e[2]*.82,e[2],e[1]*.22,M.mid,e[0]-e[1]*.39,0,0,bar,0,PI/2,14);cyl(e[2],e[2],e[1]*.56,M.mid,e[0],0,0,bar,0,PI/2,14);cyl(e[2],e[2]*.82,e[1]*.22,M.mid,e[0]+e[1]*.39,0,0,bar,0,PI/2,14);for(let i=0;i<3;i++)cyl(e[2]*1.04,e[2]*1.04,.03,M.dark,e[0]-.1+i*.1,0,0,bar,0,PI/2,14)};evc(o.ev);evc(o.ev2);
+if(o.mb==='multi'){cyl(r*1.9,r*1.9,.6,M.mid,bl-.28,0,0,bar,0,PI/2,10);for(let i=0;i<4;i++)cyl(r*2.0,r*2.0,.035,M.dark,bl-.46+i*.14,0,0,bar,0,PI/2,10)}
+else if(o.mb==='slot'){add(.42,r*2.2,r*2.4,M.mid,bl-.22,0,0,bar);for(let i=0;i<3;i++)add(.035,r*2.4,r*2.6,M.dark,bl-.36+i*.12,0,0,bar);add(.4,.03,r*2.5,M.dark,bl-.22,r*1.12,0,bar)}
+else{cyl(r*1.12,r*1.05,.18,M.dark,bl-.09,0,0,bar,0,PI/2,14);cyl(r*.62,r*.62,.02,M.blk,bl+.005,0,0,bar,0,PI/2,10)}
+if(o.sens!==0){add(.1,.1,.1,M.dark,bl*.93,r+.06,0,bar);add(.04,.07,.07,M.gl,bl*.93+.05,r+.06,0,bar)}
+add(.5,r*3.4,r*3.4,M.mid,-.3,0,0,bp);cyl(r*2.0,r*2.2,.5,M.blk,.1,0,0,bp,0,PI/2,14);
+if(o.coax!==0){const cz=o.coaxZ===undefined?r*2.9:o.coaxZ;cyl(.03,.03,.9,M.dark,.5,-.02,cz,bp,0,PI/2,8);cyl(.04,.04,.2,M.mid,.2,-.02,cz,bp,0,PI/2,8)}
+return bl};
+const tkd=[];
+// 国別フラグ等のための材質アクセス
+// 履帯式足回り
+const padG=(()=>{const gs=[];const bx=(w,h,dd,x,y,z)=>{const q=new THREE.BoxGeometry(w,h,dd);q.translate(x,y,z);gs.push(q)};return bx})();
+const mkPad=tw=>{const gs=[],bx=(w,h,dd,x,y,z)=>{const q=new THREE.BoxGeometry(w,h,dd).toNonIndexed();q.translate(x,y,z);gs.push(q)};
+bx(.37,.07,tw*.94,0,0,0);bx(.05,.05,tw*.94,.11,-.055,0);bx(.05,.05,tw*.94,-.11,-.055,0);bx(.1,.1,.06,0,.085,tw*.1);bx(.1,.1,.06,0,.085,-tw*.1);for(const k of[-1,1])bx(.34,.1,.04,0,.015,k*tw*.5);
+let n=0;gs.forEach(q=>n+=q.attributes.position.count);const P=new Float32Array(n*3),N=new Float32Array(n*3);let k=0;gs.forEach(q=>{P.set(q.attributes.position.array,k*3);N.set(q.attributes.normal.array,k*3);k+=q.attributes.position.count});
+const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(P,3));G.setAttribute('normal',new THREE.BufferAttribute(N,3));return G};
+const trkOf=(s,T)=>{const t=new THREE.Group();t.position.z=s*T.zc;g.add(t);const D={s,t,w:[],arms:[],roll:[],pads:null,u:0,P:1,N:0},L=T.L,tw=T.tw;
+const mkw=(x,y,r,wd,teeth,kind)=>{const pv=new THREE.Group();pv.position.set(x,y,0);pv.rotation.order='YZX';t.add(pv);
+if(kind==='roller'){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,wd,12),M.rub);m.rotation.x=PI/2;pv.add(m);const h=new THREE.Mesh(new THREE.CylinderGeometry(r*.5,r*.5,wd*1.04,8),M.mid);h.rotation.x=PI/2;pv.add(h)}
+else{for(const k of[-1,1]){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,wd*.3,18),M.rub);m.rotation.x=PI/2;m.position.z=k*wd*.3;pv.add(m);const rm=new THREE.Mesh(new THREE.CylinderGeometry(r*.74,r*.74,wd*.32,16),M.mid);rm.rotation.x=PI/2;rm.position.z=k*wd*.3;pv.add(rm);const cp=new THREE.Mesh(new THREE.CylinderGeometry(r*.3,r*.3,wd*.06,10),M.mid);cp.rotation.x=PI/2;cp.position.z=k*(wd*.46);pv.add(cp);
+for(let q=0;q<(teeth?0:6);q++){const a=q/6*PI*2,b=new THREE.Mesh(new THREE.BoxGeometry(r*.1,r*.1,wd*.05),M.mid);b.position.set(Math.cos(a)*r*.52,Math.sin(a)*r*.52,k*wd*.47);pv.add(b)}}
+const hb=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.55,wd*.92,12),M.mid);hb.rotation.x=PI/2;pv.add(hb)}
+if(teeth){for(let k=0;k<teeth;k++){const a=k/teeth*PI*2,b=new THREE.Mesh(new THREE.BoxGeometry(r*.3,r*.22,wd*1.0),M.mid);b.position.set(Math.cos(a)*r*1.02,Math.sin(a)*r*1.02,0);b.rotation.z=a;pv.add(b)}}
+mergeMeshes(pv,y);pv.children.forEach(c=>c.castShadow=true);return pv};
+const rr=T.rr,rf=T.rf,x0=-L/2+(T.wx0===undefined?.55:T.wx0),x1=L/2-(T.wx1===undefined?.55:T.wx1);
+for(let i=0;i<T.nw;i++){const x=T.nw>1?x0+(x1-x0)*i/(T.nw-1):0,pv=mkw(x,.15+T.wr,T.wr,tw),arm=new THREE.Mesh(new THREE.BoxGeometry(1,.1,.12),NV.mid);t.add(arm);D.w.push({o:pv,x,y:.15+T.wr,r:T.wr,off:0});D.arms.push(arm)}
+const spf=T.sp==='f';D.roll.push({o:mkw(L/2,rf+.1,rf,tw,spf?13:0),r:rf},{o:mkw(-L/2,rr+.1,rr,tw,spf?0:13),r:rr});
+const top=Math.min(2*rr,2*rf)+.1,nr=T.nr===undefined?3:T.nr;for(let i=0;i<nr;i++){const x=nr>1?-L*.3+i*L*.6/(nr-1):0,y=top-(T.rry||.12)-.02,r=T.rrr||.12;D.roll.push({o:mkw(x,y,r,tw*.55,0,'roller'),r})}
+const dy=2*(rf-rr);D.P=L+PI*rr+Math.hypot(L,dy)+PI*rf;D.N=Math.round(D.P/.4);D.pads=new THREE.InstancedMesh(mkPad(tw),NV.mid,D.N);D.pads.frustumCulled=false;D.pads.castShadow=true;t.add(D.pads);
+if(T.guard!==false){add(L*.82,.05,tw+.12,M.b2,0,top+.04,0,t);add(L*.82,.1,.04,M.b2,0,top+.07,tw/2+.07,t);add(L*.82,.1,.04,M.b2,0,top+.07,-tw/2-.07,t)}
+mergeMeshes(t,0);tkd.push(D);return t};
+// 装輪式足回り
+const whOf=(s,W)=>{const t=new THREE.Group();t.position.z=s*W.zc;g.add(t);const D={s,t,w:[],arms:[],roll:[],pads:null,u:0,P:1,N:0};
+W.xs.forEach((x,i)=>{const r=W.r,pv=new THREE.Group();pv.position.set(x,r,0);pv.rotation.order='YZX';t.add(pv);
+const tire=new THREE.Mesh(new THREE.CylinderGeometry(r,r,W.w,20),M.rub);tire.rotation.x=PI/2;pv.add(tire);
+for(const k of[-1,1]){const hub=new THREE.Mesh(new THREE.CylinderGeometry(r*.62,r*.62,W.w*.05,16),M.mid);hub.rotation.x=PI/2;hub.position.z=k*(W.w/2+.005);pv.add(hub);const cap=new THREE.Mesh(new THREE.CylinderGeometry(r*.2,r*.2,W.w*.1,10),M.mid);cap.rotation.x=PI/2;cap.position.z=k*(W.w/2+.03);pv.add(cap);
+for(let q=0;q<8;q++){const a=q/8*PI*2,b=new THREE.Mesh(new THREE.CylinderGeometry(r*.035,r*.035,W.w*.1,6),M.mid);b.rotation.x=PI/2;b.position.set(Math.cos(a)*r*.42,Math.sin(a)*r*.42,k*(W.w/2+.02));pv.add(b)}}
+for(let k=0;k<18;k++){const a=k/18*PI*2,b=new THREE.Mesh(new THREE.BoxGeometry(r*.17,r*.1,W.w*.92),M.rub);b.position.set(Math.cos(a)*r,Math.sin(a)*r,0);b.rotation.z=a;pv.add(b)}
+mergeMeshes(pv,r);pv.children.forEach(c=>c.castShadow=true);D.w.push({o:pv,x,y:r,r,off:0,st:i<2&&!W.nost})});
+mergeMeshes(t,0);tkd.push(D);return t};
+// 同一マテリアルの静的メッシュを結合 + UV再生成(ワールド寸法基準) + 頂点色(陰影・汚れ)
+function mergeMeshes(parent,oy){const by=new Map();for(const o of[...parent.children]){if(!o.isMesh||o.userData.keep||!o.material.vertexColors)continue;let a=by.get(o.material);if(!a)by.set(o.material,a=[]);a.push(o)}
+by.forEach((arr,m)=>{let n=0;const gs=arr.map(o=>{o.updateMatrix();const ge=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();ge.applyMatrix4(o.matrix);n+=ge.attributes.position.count;return ge});
+const P=new Float32Array(n*3),N=new Float32Array(n*3),U=new Float32Array(n*2),Cc=new Float32Array(n*3);let k=0;gs.forEach(ge=>{const c=ge.attributes.position.count;P.set(ge.attributes.position.array,k*3);N.set(ge.attributes.normal.array,k*3);k+=c;ge.dispose()});
+const yo=oy||0;for(let i=0;i<n;i++){const x=P[i*3],y=P[i*3+1],z=P[i*3+2],nx=N[i*3],ny=N[i*3+1],nz=N[i*3+2],ax=Math.abs(nx),ay=Math.abs(ny),az=Math.abs(nz);
+let u,v;if(ay>=ax&&ay>=az){u=x;v=z}else if(ax>=az){u=z;v=y}else{u=x;v=y}U[i*2]=u*.3;U[i*2+1]=v*.3;
+const hh=Math.min(1,Math.max(0,(y+yo-.25)/1.5));let ao=.52+.48*hh;if(ny<-.5)ao*=.62;else if(ny>.5)ao*=1.07;const nz2=hash01(Math.floor(i/3)*7919+13)*.1-.05;ao=Math.min(1.08,ao*(1+nz2));Cc[i*3]=Cc[i*3+1]=Cc[i*3+2]=ao}
+arr.forEach(o=>{parent.remove(o);o.geometry.dispose()});const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(P,3));G.setAttribute('normal',new THREE.BufferAttribute(N,3));G.setAttribute('uv',new THREE.BufferAttribute(U,2));G.setAttribute('color',new THREE.BufferAttribute(Cc,3));
+const me=new THREE.Mesh(G,m);me.castShadow=true;parent.add(me)})}
+const K={g,tg,bp,bar,M,d,era:!!d.era,add,cyl,sph,tor,pl,sd,dome,ell,sym,both,eraB,smk,hatch,cup,mg,sight,grille,wire,drum,tow,light,handle,bolts,links,jerry,crate,exhaust,mud,sensor,mast,ammo,gun,PI,mt};
+const sp=(VH[id]||VH.m1a2)(K);
+if(sp.wh){tkd.length=0;var trL=whOf(-1,sp.wh),trR=whOf(1,sp.wh)}else{var trL=trkOf(-1,sp.trk),trR=trkOf(1,sp.trk)}
+tg.position.set(sp.ring[0],sp.ring[1],0);bp.position.set(sp.mount[0],sp.mount[1],sp.mount[2]||0);
+{const kd=natOf(id),num=String(100+Array.from(id).reduce((a,ch)=>(a*7+ch.charCodeAt(0))%800,3)),dt=decalTex(kd,num),dz=sp.dec[2];
+for(const s of[-1,1]){const m=new THREE.Mesh(new THREE.PlaneGeometry(1.2,.6),new THREE.MeshLambertMaterial({map:dt,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));m.position.set(sp.dec[0],sp.dec[1],s*(dz+.03));m.rotation.y=s>0?0:PI;tg.add(m)}}
+let cmdr=null;if(sp.cmdr){cmdr=new THREE.Group();cmdr.position.set(sp.cmdr[0],sp.cmdr[1],sp.cmdr[2]);const cm=c=>new THREE.MeshStandardMaterial({color:c,roughness:.9}),bd=new THREE.Mesh(new THREE.BoxGeometry(.46,.5,.4),cm(0x4b5a3a)),vest=new THREE.Mesh(new THREE.BoxGeometry(.48,.3,.42),cm(0x3a4530)),hd=new THREE.Mesh(new THREE.SphereGeometry(.19,12,10),cm(0xd9b38c)),hm=new THREE.Mesh(new THREE.SphereGeometry(.23,12,8,0,6.28,0,1.7),cm(0x2f3b2a)),gg=new THREE.Mesh(new THREE.BoxGeometry(.04,.07,.3),cm(0x111111)),hs=new THREE.Mesh(new THREE.BoxGeometry(.05,.1,.36),cm(0x1a1a1a));
+bd.position.y=.12;vest.position.y=.2;hd.position.y=.5;hm.position.y=.56;gg.position.set(.17,.55,0);hs.position.set(.0,.45,0);cmdr.add(bd,vest,hd,hm,gg);for(const k of[-1,1]){const ar=new THREE.Mesh(new THREE.BoxGeometry(.12,.12,.36),cm(0x4b5a3a));ar.position.set(.2,.15,k*.0);ar.position.z=k*.27;ar.rotation.y=k*.2;cmdr.add(ar)}tg.add(cmdr)}
+const ant=new THREE.Group();ant.position.set(sp.ant[0],sp.ant[1],sp.ant[2]);tg.add(ant);const al=sp.ant[3]||2.6;cyl(.03,.02,.3,M.dark,0,.15,0,ant,0,0,8);cyl(.016,.008,al,M.dark,0,al/2+.15,0,ant,0,0,6);
+mergeMeshes(g,0);mergeMeshes(tg,sp.ring[1]);mergeMeshes(bp,sp.ring[1]+sp.mount[1]);mergeMeshes(bar,sp.ring[1]+sp.mount[1]);mergeMeshes(ant,sp.ring[1]);
+const eraM={};EM.forEach(([o,pa])=>{const z=pa===tg?(o.position.x>(sp.eraX===undefined?.7:sp.eraX)?'砲塔前面':'砲塔側面'):(Math.abs(o.position.z)>sp.Wd/2-.3?'車体側面':'車体前面上部');(eraM[z]=eraM[z]||[]).push(o)});
+return{g,tg,bp,bar,bl:sp.bl,body:M.body,dark:M.dark,mats:[M.body,M.b2,M.b3,M.tan],eraM,tk:tkd,ant,cmdr,trL,trR,L:sp.L,TL:sp.trk?sp.trk.L:sp.L,TL:sp.trk?sp.trk.L:sp.L,Wd:sp.Wd,H:sp.H,hullTop:sp.ring[1],ml:sp.mount[0]+sp.bl,my:sp.ring[1]+sp.mount[1],rx:sp.ring[0],geo:sp.wh?{rr:.6,rf:.6,ay:.9}:{rr:sp.trk.rr,rf:sp.trk.rf,ay:sp.trk.ay||.9}}}
+
 // ===== マップ固有の演出: 探照灯(ゼーロウ) / 降雪(バストーニュ) =====
 const FX={t:0,sl:[],ll:[],snow:null,bm:null};
 {const gc_=document.createElement('canvas');gc_.width=gc_.height=64;{const g=gc_.getContext('2d'),r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.3,'rgba(255,245,200,.6)');r.addColorStop(1,'rgba(255,240,180,0)');g.fillStyle=r;g.fillRect(0,0,64,64)}
@@ -390,7 +795,7 @@ const bm={};function bmesh(t){if(!bm[t]){const L={ap:2.2,apds:1.3,heat:1.6,tow:2
 function sb(own,x,y,z,vx,vy,vz,w,team,tg){const o=bmesh(w.type);o.position.set(x,y,z);S.add(o);bul.push({o,x,y,z,vx,vy,vz,w,team,own,tg,d:0})}
 function shoot(t,tg){if(t.mod.gun<=0||t.mod.ammo<=0||t.rounds[t.w]<=0){if(t.isPlayer)msg(t.mod.gun<=0?'主砲損傷: 発射不能':t.mod.ammo<=0?'弾薬喪失: 発射不能':'弾切れ: Qで武装切替');t.cd=1;return}const w=t.weapons[t.w],sg=.0014+(t.mod.gun<50?.004:0)+(t.mod.cr[1]?0:.006)+(t.mod.optic<=0?.005:t.mod.optic<50?.002:0),P=wpitch(t)+(Math.random()-.5)*sg*2,Y=t.ta+(Math.random()-.5)*sg*2,cp=Math.cos(P),dx=Math.cos(Y)*cp,dy=Math.sin(P),dz=Math.sin(Y)*cp,s=w.speed*18;
 if(w.type==='tow'){if(!tg){let best=.5;tanks.forEach(e=>{if(e.hp<=0||e.isEnemy===t.isEnemy)return;const vx=e.x-t.x,vz=e.z-t.z,d=Math.hypot(vx,vz)||1,dot=(vx*Math.cos(t.ta)+vz*Math.sin(t.ta))/d;if(dot>best){best=dot;tg=e}})}}else tg=null;
-const mx=t.x+dx*t.ml,my=t.y+t.my+dy*t.ml,mz=t.z+dz*t.ml;sb(t,mx,my,mz,dx*s,dy*s,dz*s,w,t.isEnemy,tg);if(ON&&t.isPlayer)ON.net.emit('shot',{w:t.w,x:+mx.toFixed(1),y:+my.toFixed(1),z:+mz.toFixed(1),vx:+(dx*s).toFixed(1),vy:+(dy*s).toFixed(1),vz:+(dz*s).toFixed(1),tg:tg&&tg.peer||null});if(ON&&t.bot&&!t.rem)ON.net.emit('bshot',{i:t.bid,w:t.w,x:+mx.toFixed(1),y:+my.toFixed(1),z:+mz.toFixed(1),vx:+(dx*s).toFixed(1),vy:+(dy*s).toFixed(1),vz:+(dz*s).toFixed(1),tg:tg&&(tg.peer||(tg.bot?tg.bid:(tg.isPlayer?ON.net.me():null)))||null});t.dpv=(t.dpv||0)+w.damage*.0006/(MASS(t)/400);t.sp-=Math.cos(t.ta-t.ba)*w.damage*.005*(w.type==='tow'?.2:1)/(MASS(t)/400);t.dpv=(t.dpv||0)+Math.cos(t.ta-t.ba)*w.damage*.013/(MASS(t)/400);t.drv=(t.drv||0)+Math.sin(t.ta-t.ba)*w.damage*.0095/(MASS(t)/400);t.rounds[t.w]--;t.cd=w.reload*rlm(t);t.rc=1;boom(mx,my,mz,'muz');mf.position.set(mx,my+1,mz);mf.intensity=4;
+const mx=t.x+Math.cos(t.ba)*t.rx+dx*t.ml,my=t.y+t.my+dy*t.ml,mz=t.z+Math.sin(t.ba)*t.rx+dz*t.ml;sb(t,mx,my,mz,dx*s,dy*s,dz*s,w,t.isEnemy,tg);if(ON&&t.isPlayer)ON.net.emit('shot',{w:t.w,x:+mx.toFixed(1),y:+my.toFixed(1),z:+mz.toFixed(1),vx:+(dx*s).toFixed(1),vy:+(dy*s).toFixed(1),vz:+(dz*s).toFixed(1),tg:tg&&tg.peer||null});if(ON&&t.bot&&!t.rem)ON.net.emit('bshot',{i:t.bid,w:t.w,x:+mx.toFixed(1),y:+my.toFixed(1),z:+mz.toFixed(1),vx:+(dx*s).toFixed(1),vy:+(dy*s).toFixed(1),vz:+(dz*s).toFixed(1),tg:tg&&(tg.peer||(tg.bot?tg.bid:(tg.isPlayer?ON.net.me():null)))||null});t.dpv=(t.dpv||0)+w.damage*.0006/(MASS(t)/400);t.sp-=Math.cos(t.ta-t.ba)*w.damage*.005*(w.type==='tow'?.2:1)/(MASS(t)/400);t.dpv=(t.dpv||0)+Math.cos(t.ta-t.ba)*w.damage*.013/(MASS(t)/400);t.drv=(t.drv||0)+Math.sin(t.ta-t.ba)*w.damage*.0095/(MASS(t)/400);t.rounds[t.w]--;t.cd=w.reload*rlm(t);t.rc=1;boom(mx,my,mz,'muz');mf.position.set(mx,my+1,mz);mf.intensity=4;
 if(t.isPlayer){shake=.5;sfx(120,.45,.3)}else if(player&&Math.hypot(t.x-player.x,t.z-player.z)<250)sfx(100,.4,.12)}
 let rep_=0,repCd=0;
 function repair(){if(!run||player.hp<=0||rep_>0||repCd>0)return;if(Math.abs(player.sp)>.5){msg('停車して修理してください');return}if(!(player.mod.cr[3]||player.mod.cr[2])){msg('修理できる乗員がいません');return}rep_=8;msg('応急修理中… 停車を維持')}
@@ -680,7 +1085,7 @@ function step(dt){physFrame(dt);smkCd=Math.max(0,smkCd-dt);airCd=Math.max(0,airC
 if(p.hp>0){const cp=camPos(),T=[cp.p[0]+cp.a[0]*250,cp.p[1]+cp.a[1]*250,cp.p[2]+cp.a[2]*250],rate=(K.sight?.5:1)*trm(p);
 p.ta+=cl(nrm(Math.atan2(T[2]-p.z,T[0]-p.x)-p.ta),-rate*dt,rate*dt);
 p.tp+=cl(cl(Math.atan2(T[1]-p.y-p.my,Math.hypot(T[0]-p.x,T[2]-p.z))-(p.pitch*Math.cos(p.ta-p.ba)-p.roll*Math.sin(p.ta-p.ba)),-p.dep,.38)-p.tp,-.6*dt,.6*dt);
-p.ba+=(K.r-K.l)*.95*dt*(p.mod.cr[3]&&p.mod.eng>0&&(p.mod.trkL>0||p.mod.trkR>0)?1:0);const tg=(K.f?p.top*SPD/3.6:K.b?-p.rev*SPD/3.6:0)*emul(p);p.sp+=(tg-p.sp)*(1-Math.pow(1-p.accel,dt*60));mv(p,dt)}
+p.ba+=(K.r-K.l)*.95*dt*(p.mod.cr[3]&&p.mod.eng>0&&(p.mod.trkL>0||p.mod.trkR>0)?1:0);const tg=(K.f?p.top*SPD/3.6*K.f:K.b?-p.rev*SPD/3.6*K.b:0)*emul(p);p.sp+=(tg-p.sp)*(1-Math.pow(1-p.accel,dt*60));mv(p,dt)}
 tanks.forEach(t=>{if(t.hp<=0){if(t.wreck&&Math.random()<dt*6)pt(t.x,t.y+3,t.z,0,4,0,2.2,1.5,3,0,1);return}t.cd=Math.max(0,t.cd-dt);t.rc*=Math.pow(.02,dt);phys(t,dt);if(!t.rem)fireDot(t,dt);else if(t.fire>0&&Math.random()<dt*10)pt(t.x,t.y+2.5,t.z,0,5,0,1.2,1,0,0,1);if(t.mod.eng<50&&Math.random()<dt*(t.mod.eng<=0?10:4))pt(t.x-Math.cos(t.ba)*3,t.y+2,t.z-Math.sin(t.ba)*3,0,3,0,1.4,1,3,0,1);if(t.rem)remPose(t,dt);else if(!t.isPlayer&&lock<=0){if(t.aiD>0)t.aiD-=dt;else ai(t,dt)}if(Math.abs(t.sp)>2&&Math.random()<dt*14){const q=Math.sign(t.sp);pt(t.x-Math.cos(t.ba)*3*q,t.y+.6,t.z-Math.sin(t.ba)*3*q,0,1.5,0,1.1,.9,4,0,1)}});
 for(let i=0;i<tanks.length;i++)for(let j=i+1;j<tanks.length;j++){const a=tanks[i],b=tanks[j];if(a.hp<=0||b.hp<=0)continue;const dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz);if(d<7&&d>.01){const f=(7-d)/2/d,m1=MASS(a),m2=MASS(b),wa=2*m2/(m1+m2),wb=2*m1/(m1+m2);a.x-=dx*f*wa;a.z-=dz*f*wa;b.x+=dx*f*wb;b.z+=dz*f*wb;const nx=dx/d,nz=dz/d,ca=Math.cos(a.ba)*nx+Math.sin(a.ba)*nz,cb=Math.cos(b.ba)*nx+Math.sin(b.ba)*nz,cv=a.sp*ca-b.sp*cb;if(cv>.5){a.sp-=cv*.28*wa*Math.sign(ca||1);b.sp+=cv*.28*wb*Math.sign(cb||1)}}}
 for(let i=bul.length-1;i>=0;i--){const b=bul[i];let dead=false;if(b.igt>0)b.igt-=dt;const sp=Math.hypot(b.vx,b.vy,b.vz),n=Math.max(1,Math.ceil(sp*dt/1.5)),h=dt/n;
@@ -712,16 +1117,16 @@ if(over){endT-=dt;if(endT<=0&&$('rs').style.display==='none'){const t=$('rt');t.
 const mmc=$('mm').getContext('2d'),mmBg=document.createElement('canvas');mmBg.width=180;mmBg.height=100;{const g=mmBg.getContext('2d'),im=g.createImageData(180,100);for(let i=0;i<180;i++)for(let j=0;j<100;j++){const x=i*(2*MX/180)-MX,z=j*(2*MZ/100)-MZ,h=gh(x,z),sh=cl(.5+(gh(x+4,z+4)-h)*.08,.25,.9),v=cl(h/12,0,1),k=(j*180+i)*4;im.data[k]=40+v*90*sh;im.data[k+1]=65+v*35+sh*40;im.data[k+2]=38+sh*20;im.data[k+3]=255}g.putImageData(im,0,0)}const spot=t=>{if(t.isEnemy===player.isEnemy)return true;const nw=performance.now();if(nw-(t._spT||0)<250)return t._spV;t._spT=nw;return t._spV=tanks.some(a=>a.hp>0&&a.isEnemy!==t.isEnemy&&Math.hypot(a.x-t.x,a.z-t.z)<450*(MP.sight||1)&&los(a,t))};
 const PAD=new THREE.Object3D();
 function animTank(t,dt){if(!t.tk||dt<=0)return;let om=t.pba===undefined?0:nrm(t.ba-t.pba)/dt;t.pba=t.ba;om=cl(om,-2.5,2.5);
-const c=Math.cos(t.ba),s=Math.sin(t.ba),Lh=t.L,tp=Math.tan(t.pitch),tr=Math.tan(t.roll),ri=.6,rs=.7,Lt=Math.hypot(Lh,.2),a1=Lh,a2=a1+Math.PI*ri,a3=a2+Lt;
+const c=Math.cos(t.ba),s=Math.sin(t.ba),gg=t.geo,Lh=t.TL,tp=Math.tan(t.pitch),tr=Math.tan(t.roll),ri=gg.rr,rs=gg.rf,dyT=2*(rs-ri),Lt=Math.hypot(Lh,dyT),a1=Lh,a2=a1+Math.PI*ri,a3=a2+Lt;
 const ax=((t.sp||0)-(t.psp||0))/dt;t.psp=t.sp||0;t.av=(t.av||0)+(-(t.asw||0)*90-(t.av||0)*6-cl(ax,-8,8)*1.5)*dt;t.asw=cl((t.asw||0)+t.av*dt,-.4,.4);t.ant.rotation.z=t.asw;if(t.cmdr){t.cmdr.visible=!!t.mod.cr[0]&&!t.wreck;t.cmdr.rotation.z=cl(t.asw*.6,-.25,.25)}
 t.tk.forEach(D=>{const sd=D.s,ok=sd<0?t.mod.trkL>0:t.mod.trkR>0,v=(t.wreck||!ok)?0:(t.sp||0)+(sd<0?1:-1)*om*t.Wd/2;D.u=((D.u+v*dt)%D.P+D.P)%D.P;
 const zl=sd*(t.Wd/2-.05);D.w.forEach((q,i)=>{const xl=q.x,wx=t.x+c*xl-s*zl,wz=t.z+s*xl+c*zl,tg=cl(gh(wx,wz)-(t.y+xl*tp-zl*tr),-.28,.22);q.off+=(tg-q.off)*Math.min(1,dt*14);q.o.position.y=q.y+q.off;q.o.rotation.z-=v*dt/q.r;if(q.st)q.o.rotation.y=-cl(om*.7,-.5,.5);
-const ar=D.arms[i];if(ar){const px=xl+.55,py=.9,dx=xl-px,dy=q.y+q.off-py;ar.position.x=px+dx/2;ar.position.y=py+dy/2;ar.rotation.z=Math.atan2(dy,dx);ar.scale.x=Math.hypot(dx,dy)}});
+const ar=D.arms[i];if(ar){const px=xl+.55,py=gg.ay,dx=xl-px,dy=q.y+q.off-py;ar.position.x=px+dx/2;ar.position.y=py+dy/2;ar.rotation.z=Math.atan2(dy,dx);ar.scale.x=Math.hypot(dx,dy)}});
 D.roll.forEach(q=>{q.o.rotation.z-=v*dt/q.r});
 if(D.pads){const W=D.w,offAt=x=>{if(x<=W[0].x)return W[0].off;for(let k=1;k<W.length;k++)if(x<=W[k].x){const f=(x-W[k-1].x)/(W[k].x-W[k-1].x);return W[k-1].off+(W[k].off-W[k-1].off)*f}return W[W.length-1].off};
 for(let i=0;i<D.N;i++){const u=(D.u+i*D.P/D.N)%D.P;let x,y,hd;
-if(u<a1){x=Lh/2-u;y=.1+offAt(x);hd=0}else if(u<a2){const a=(u-a1)/ri;x=-Lh/2-ri*Math.sin(a);y=.7-ri*Math.cos(a);hd=Math.atan2(Math.sin(a),-Math.cos(a))}
-else if(u<a3){const f=(u-a2)/Lt;x=-Lh/2+f*Lh;y=1.3+f*.2;hd=Math.atan2(.2,Lh)}else{const a=(u-a3)/rs;x=Lh/2+rs*Math.sin(a);y=.8+rs*Math.cos(a);hd=Math.atan2(-Math.sin(a),Math.cos(a))}
+if(u<a1){x=Lh/2-u;y=.1+offAt(x);hd=0}else if(u<a2){const a=(u-a1)/ri;x=-Lh/2-ri*Math.sin(a);y=ri+.1-ri*Math.cos(a);hd=Math.atan2(Math.sin(a),-Math.cos(a))}
+else if(u<a3){const f=(u-a2)/Lt;x=-Lh/2+f*Lh;y=2*ri+.1+f*dyT;hd=Math.atan2(dyT,Lh)}else{const a=(u-a3)/rs;x=Lh/2+rs*Math.sin(a);y=rs+.1+rs*Math.cos(a);hd=Math.atan2(-Math.sin(a),Math.cos(a))}
 PAD.position.set(x,y,0);PAD.rotation.set(0,0,hd);PAD.updateMatrix();D.pads.setMatrixAt(i,PAD.matrix)}D.pads.instanceMatrix.needsUpdate=true}})}
 function render(dt){tanks.forEach(t=>{t.g.position.set(t.x,t.y+(t.hz||0),t.z);t.g.rotation.set(t.roll+(t.dr||0),-t.ba,t.pitch+(t.dp||0),'YZX');t.tg.rotation.y=-(t.ta-t.ba);t.bp.rotation.z=t.tp;t.bar.position.x=-t.rc*.7;t.trL.position.y=t.mod.trkL<=0?-.15:0;t.trR.position.y=t.mod.trkR<=0?-.15:0;t.trL.rotation.z=t.mod.trkL<=0?.04:0;t.trR.rotation.z=t.mod.trkR<=0?-.04:0;animTank(t,dt)});
 const cp=camPos(),p=player,tf=K.sight?22:65;cam.fov+=(tf-cam.fov)*Math.min(1,dt*10);cam.updateProjectionMatrix();
@@ -755,6 +1160,14 @@ cv.addEventListener('contextmenu',e=>e.preventDefault());
 const KM={KeyW:'f',ArrowUp:'f',KeyS:'b',ArrowDown:'b',KeyA:'l',ArrowLeft:'l',KeyD:'r',ArrowRight:'r',KeyZ:'sD',KeyX:'sU',KeyC:'sL',KeyV:'sR'};
 addEventListener('keydown',e=>{if(KM[e.code])K[KM[e.code]]=1;else if(e.code==='Space'){fire();e.preventDefault()}else if(e.code==='KeyQ')sw();else if(e.code==='KeyE')smoke();else if(e.code==='KeyR')callAir();else if(e.code==='KeyT')repair();else if(e.code==='Enter'&&run&&ON){openChat();e.preventDefault()}else if(e.code==='Tab'){specNext();e.preventDefault()}else if(/^Digit[1-4]$/.test(e.code)&&ON)sendCmd(+e.code[5]-1);else if(e.code==='KeyB'&&player&&player.su){player.su.p=0;player.su.r=0}else if(e.code==='ShiftLeft')K.sight=1});
 addEventListener('keyup',e=>{if(KM[e.code])K[KM[e.code]]=0;else if(e.code==='ShiftLeft')K.sight=0});
+{const jy=$('joy'),jk=$('jk');let jid=null;const R0=69,MAXR=44,DZ=.18;
+const jset=(x,y)=>{const m=Math.hypot(x,y),k=m>MAXR?MAXR/m:1;jk.style.transform='translate('+x*k+'px,'+y*k+'px)';let nx=x*k/MAXR,ny=y*k/MAXR;const ax=Math.abs(nx),ay=Math.abs(ny);
+const f=v=>v<DZ?0:Math.min(1,(v-DZ)/(1-DZ));K.f=ny<0?f(ay):0;K.b=ny>0?f(ay):0;K.r=nx>0?f(ax):0;K.l=nx<0?f(ax):0};
+const mv=e=>{const r=jy.getBoundingClientRect();jset(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2))};
+const end=e=>{if(e.pointerId!==jid)return;jid=null;jy.classList.remove('on');jk.style.transform='';K.f=K.b=K.l=K.r=0};
+jy.addEventListener('pointerdown',e=>{e.preventDefault();jid=e.pointerId;try{jy.setPointerCapture(jid)}catch(x){}jy.classList.add('on');mv(e)});
+jy.addEventListener('pointermove',e=>{if(e.pointerId===jid){e.preventDefault();mv(e)}});
+jy.addEventListener('pointerup',end);jy.addEventListener('pointercancel',end);jy.addEventListener('lostpointercapture',end)}
 document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k,on=e=>{e.preventDefault();b.classList.add('on');K[k]=1},off=()=>{b.classList.remove('on');K[k]=0};b.addEventListener('pointerdown',on);['pointerup','pointercancel','pointerleave'].forEach(n=>b.addEventListener(n,off))});
 document.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();({fire,sw,smoke,repair,air:callAir,sr:()=>{if(player&&player.su){player.su.p=0;player.su.r=0}}})[b.dataset.a]()}));
 // ===== チャット =====
